@@ -2,22 +2,28 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MyPortfolio.Core.Entities;
 using MyPortfolio.Infrastructure.Data;
-
+using Microsoft.AspNetCore.Authorization;
 namespace MyPortfolio.Web.Pages.Portfolio
 {
+    [Authorize]
     public class EditModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _environment; // Cần cái này để lưu file
 
-        public EditModel(ApplicationDbContext context)
+        public EditModel(ApplicationDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         [BindProperty]
         public PortfolioItem PortfolioItem { get; set; } = default!;
 
-        // 1. Khi mở trang: Lấy dữ liệu cũ lên để hiển thị
+        // Biến hứng file ảnh mới (nếu có)
+        [BindProperty]
+        public IFormFile? ImageUpload { get; set; }
+
         public async Task<IActionResult> OnGetAsync(int? id)
         {
             if (id == null) return NotFound();
@@ -29,13 +35,34 @@ namespace MyPortfolio.Web.Pages.Portfolio
             return Page();
         }
 
-        // 2. Khi bấm Save: Lưu thay đổi đè vào cái cũ
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid) return Page();
+
+            // --- LOGIC UPLOAD ẢNH (EDIT) ---
+            if (ImageUpload != null)
+            {
+                // 1. Nếu người dùng chọn ảnh mới -> Upload và ghi đè
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ImageUpload.FileName);
+                var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", fileName);
+
+                using (var fileStream = new FileStream(uploadPath, FileMode.Create))
+                {
+                    await ImageUpload.CopyToAsync(fileStream);
+                }
+
+                // Cập nhật đường dẫn ảnh mới
+                PortfolioItem.ImageUrl = "/uploads/" + fileName;
+            }
+            // Nếu ImageUpload == null thì nó sẽ tự giữ lại cái Link cũ 
+            // (nhờ vào cái input hidden bên file giao diện)
+            // -------------------------------
+
+            // Fix lỗi ngày giờ UTC
             PortfolioItem.CreatedDate = DateTime.SpecifyKind(PortfolioItem.CreatedDate, DateTimeKind.Utc);
-            // Báo cho Database biết là dòng này bị thay đổi rồi
+
             _context.Attach(PortfolioItem).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+
             try
             {
                 await _context.SaveChangesAsync();

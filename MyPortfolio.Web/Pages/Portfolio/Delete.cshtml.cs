@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MyPortfolio.Core.Entities;
 using MyPortfolio.Infrastructure.Data;
-
+using Microsoft.AspNetCore.Authorization;
 namespace MyPortfolio.Web.Pages.Portfolio
 {
+    [Authorize]
     public class DeleteModel : PageModel
     {
         private readonly ApplicationDbContext _context;

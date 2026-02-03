@@ -2,41 +2,68 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MyPortfolio.Core.Entities;
 using MyPortfolio.Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MyPortfolio.Web.Pages.Portfolio
 {
+    [Authorize]
     public class CreateModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _environment; // Dịch vụ để lấy đường dẫn file
 
-        // Code này để kết nối Database
-        public CreateModel(ApplicationDbContext context)
+        public CreateModel(ApplicationDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
-        // Tạo biến để hứng dữ liệu từ Form nhập
         [BindProperty]
         public PortfolioItem PortfolioItem { get; set; } = default!;
+
+        // Biến này để hứng file ảnh từ Form
+        [BindProperty]
+        public IFormFile? ImageUpload { get; set; }
 
         public IActionResult OnGet()
         {
             return Page();
         }
 
-        // Hàm này chạy khi người dùng bấm nút "Save"
         public async Task<IActionResult> OnPostAsync()
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid) return Page();
+
+            // --- LOGIC UPLOAD ẢNH ---
+            if (ImageUpload != null)
             {
-                return Page();
+                // 1. Tạo tên file ngẫu nhiên để không bị trùng
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ImageUpload.FileName);
+
+                // 2. Lấy đường dẫn đến thư mục wwwroot/uploads
+                var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", fileName);
+
+                // 3. Lưu file vào đó
+                using (var fileStream = new FileStream(uploadPath, FileMode.Create))
+                {
+                    await ImageUpload.CopyToAsync(fileStream);
+                }
+
+                // 4. Lưu đường dẫn vào Database (để hiển thị sau này)
+                PortfolioItem.ImageUrl = "/uploads/" + fileName;
+            }
+            else
+            {
+                // Nếu lười không up ảnh thì dùng ảnh giữ chỗ
+                PortfolioItem.ImageUrl = "https://via.placeholder.com/300x200?text=No+Image";
             }
 
-            // Lưu vào Database
+            // Đóng dấu giờ UTC
+            PortfolioItem.CreatedDate = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
+
             _context.PortfolioItems.Add(PortfolioItem);
             await _context.SaveChangesAsync();
 
-            // Lưu xong thì quay về trang chủ
             return RedirectToPage("/Index");
         }
     }

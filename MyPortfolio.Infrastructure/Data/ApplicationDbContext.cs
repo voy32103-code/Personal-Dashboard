@@ -1,15 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore; // Thêm dòng này
+using Microsoft.EntityFrameworkCore;
 using MyPortfolio.Core.Entities;
 
 namespace MyPortfolio.Infrastructure.Data
 {
-    public class ApplicationDbContext : DbContext
+    // ĐỔI: Inherit từ IdentityDbContext thay vì DbContext
+    public class ApplicationDbContext : IdentityDbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
         {
         }
 
-        // Khai báo bảng PortfolioItems
         public DbSet<PortfolioItem> PortfolioItems { get; set; }
     }
 }
