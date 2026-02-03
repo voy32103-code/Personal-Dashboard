@@ -1,0 +1,26 @@
+﻿@page
+@model MyPortfolio.Web.Pages.Portfolio.DeleteModel
+
+<h3>Bạn có chắc muốn xóa dự án này?</h3>
+<div class="alert alert-danger">
+    Hành động này không thể hoàn tác!
+</div>
+
+<div>
+    <h4>@Model.PortfolioItem.Title</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Mô Tả</dt>
+        <dd class="col-sm-10">@Model.PortfolioItem.Description</dd>
+
+        <dt class="col-sm-2">Link Ảnh</dt>
+        <dd class="col-sm-10">@Model.PortfolioItem.ImageUrl</dd>
+    </dl>
+
+    <form method="post">
+        <input type="hidden" asp-for="PortfolioItem.Id" />
+
+        <input type="submit" value="Xóa Luôn" class="btn btn-danger" />
+        <a asp-page="/Index" class="btn btn-secondary">Thôi, giữ lại</a>
+    </form>
+</div>

@@ -1,0 +1,36 @@
+﻿@page
+@model MyPortfolio.Web.Pages.Portfolio.CreateModel
+
+<h2>Thêm Dự Án Mới</h2>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form method="post">
+            <div class="form-group mb-3">
+                <label class="control-label">Tên Dự Án</label>
+                <input asp-for="PortfolioItem.Title" class="form-control" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Mô Tả</label>
+                <textarea asp-for="PortfolioItem.Description" class="form-control"></textarea>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Link Ảnh (URL)</label>
+                <input asp-for="PortfolioItem.ImageUrl" class="form-control" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Link Github/Web</label>
+                <input asp-for="PortfolioItem.ProjectUrl" class="form-control" />
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Lưu Dự Án" class="btn btn-primary" />
+                <a asp-page="/Index" class="btn btn-secondary">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>

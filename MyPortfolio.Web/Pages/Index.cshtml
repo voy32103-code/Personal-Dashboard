@@ -1,0 +1,60 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Trang Chủ";
+}
+
+<div class="text-center mb-5">
+    <h1 class="display-4 fw-bold">My Portfolio</h1>
+    <p class="lead">Chào mừng đến với bộ sưu tập dự án .NET Core của tôi!</p>
+
+    <a href="/Portfolio/Create" class="btn btn-success btn-lg">
+        + Thêm Dự Án Mới
+    </a>
+</div>
+
+<div class="container">
+    <div class="row">
+        @if (Model.Projects.Count == 0)
+        {
+            <div class="alert alert-warning text-center">
+                Chưa có dự án nào. Hãy bấm nút "Thêm Dự Án Mới" ở trên nhé!
+            </div>
+        }
+        else
+        {
+            @foreach (var item in Model.Projects)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/300x200?text=No+Image" : item.ImageUrl)"
+                             class="card-img-top"
+                             alt="@item.Title"
+                             style="height: 200px; object-fit: cover;">
+
+                        <div class="card-body">
+                            <h5 class="card-title fw-bold">@item.Title</h5>
+                            <p class="card-text text-muted">
+                                @(item.Description.Length > 100 ? item.Description.Substring(0, 100) + "..." : item.Description)
+                            </p>
+                        </div>
+
+                        <div class="card-footer bg-white border-top-0 pb-3 d-flex justify-content-between">
+                            <a href="@item.ProjectUrl" target="_blank" class="btn btn-outline-primary btn-sm">
+                                Xem Demo
+                            </a>
+                            <div>
+                                <a asp-page="/Portfolio/Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">
+                                    Sửa
+                                </a>
+                                <a asp-page="/Portfolio/Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">
+                                    Xóa
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
