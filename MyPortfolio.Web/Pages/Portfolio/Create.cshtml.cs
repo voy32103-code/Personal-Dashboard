@@ -10,7 +10,7 @@ namespace MyPortfolio.Web.Pages.Portfolio
     public class CreateModel : PageModel
     {
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _environment; // Dịch vụ để lấy đường dẫn file
+        private readonly IWebHostEnvironment _environment;
 
         public CreateModel(ApplicationDbContext context, IWebHostEnvironment environment)
         {
@@ -21,9 +21,11 @@ namespace MyPortfolio.Web.Pages.Portfolio
         [BindProperty]
         public PortfolioItem PortfolioItem { get; set; } = default!;
 
-        // Biến này để hứng file ảnh từ Form
         [BindProperty]
         public IFormFile? ImageUpload { get; set; }
+
+        [BindProperty] // ← ĐÃ THÊM ATTRIBUTE NÀY
+        public IFormFile? AudioUpload { get; set; }
 
         public IActionResult OnGet()
         {
@@ -37,28 +39,35 @@ namespace MyPortfolio.Web.Pages.Portfolio
             // --- LOGIC UPLOAD ẢNH ---
             if (ImageUpload != null)
             {
-                // 1. Tạo tên file ngẫu nhiên để không bị trùng
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ImageUpload.FileName);
-
-                // 2. Lấy đường dẫn đến thư mục wwwroot/uploads
                 var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", fileName);
 
-                // 3. Lưu file vào đó
                 using (var fileStream = new FileStream(uploadPath, FileMode.Create))
                 {
                     await ImageUpload.CopyToAsync(fileStream);
                 }
 
-                // 4. Lưu đường dẫn vào Database (để hiển thị sau này)
                 PortfolioItem.ImageUrl = "/uploads/" + fileName;
             }
             else
             {
-                // Nếu lười không up ảnh thì dùng ảnh giữ chỗ
                 PortfolioItem.ImageUrl = "https://via.placeholder.com/300x200?text=No+Image";
             }
 
-            // Đóng dấu giờ UTC
+            // --- LOGIC UPLOAD AUDIO ---
+            if (AudioUpload != null)
+            {
+                var audioName = Guid.NewGuid().ToString() + Path.GetExtension(AudioUpload.FileName);
+                var audioPath = Path.Combine(_environment.WebRootPath, "uploads", audioName);
+
+                using (var stream = new FileStream(audioPath, FileMode.Create))
+                {
+                    await AudioUpload.CopyToAsync(stream);
+                }
+
+                PortfolioItem.AudioUrl = "/uploads/" + audioName;
+            }
+
             PortfolioItem.CreatedDate = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
 
             _context.PortfolioItems.Add(PortfolioItem);

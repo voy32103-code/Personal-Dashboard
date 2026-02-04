@@ -1,37 +1,309 @@
 ﻿@page
 @model MyPortfolio.Web.Pages.Portfolio.CreateModel
+@{
+    ViewData["Title"] = "Thêm Dự Án Mới";
+}
 
-<h2>Thêm Dự Án Mới</h2>
-<hr />
+<div class="container text-white mt-4" style="max-width: 900px;">
+    <h2 class="fw-bold mb-4">🎵 Thêm Bài Hát / Dự Án Mới</h2>
 
-<div class="row">
-    <div class="col-md-6">
-        <form method="post" enctype="multipart/form-data">
+    <div asp-validation-summary="All" class="text-danger mb-3 bg-dark p-3 rounded border border-danger"></div>
 
-            <div class="form-group mb-3">
-                <label class="control-label">Tên Dự Án</label>
-                <input asp-for="PortfolioItem.Title" class="form-control" />
+    <form method="post" enctype="multipart/form-data" class="bg-dark p-4 rounded shadow">
+
+        <!-- Thông tin cơ bản -->
+        <div class="mb-3">
+            <label asp-for="PortfolioItem.Title" class="form-label fw-bold">
+                <i class="fas fa-music"></i> Tên Bài Hát / Dự Án *
+            </label>
+            <input asp-for="PortfolioItem.Title"
+                   class="form-control bg-secondary text-white border-0"
+                   placeholder="Nhập tên bài hát..."
+                   required />
+            <span asp-validation-for="PortfolioItem.Title" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="PortfolioItem.Artist" class="form-label fw-bold">
+                <i class="fas fa-user"></i> Ca Sĩ / Nghệ Sĩ
+            </label>
+            <input asp-for="PortfolioItem.Artist"
+                   class="form-control bg-secondary text-white border-0"
+                   placeholder="Nhập tên ca sĩ..." />
+            <span asp-validation-for="PortfolioItem.Artist" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="PortfolioItem.Description" class="form-label fw-bold">
+                <i class="fas fa-align-left"></i> Mô Tả Ngắn *
+            </label>
+            <input asp-for="PortfolioItem.Description"
+                   class="form-control bg-secondary text-white border-0"
+                   placeholder="Mô tả ngắn gọn về bài hát..."
+                   required />
+            <span asp-validation-for="PortfolioItem.Description" class="text-danger"></span>
+        </div>
+
+        <!-- Lyrics Section -->
+        <div class="mb-4">
+            <label class="form-label fw-bold">
+                <i class="fas fa-file-alt"></i> Lời Bài Hát (Lyrics)
+            </label>
+
+            <!-- LRC Upload Button -->
+            <div class="mb-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="file"
+                           id="lrc-file-upload"
+                           accept=".lrc,.txt"
+                           class="form-control bg-secondary text-white border-0"
+                           style="flex: 1;">
+                    <button type="button"
+                            class="btn btn-info"
+                            onclick="document.getElementById('lrc-file-upload').click()">
+                        <i class="fas fa-upload"></i> Upload LRC
+                    </button>
+                    <button type="button"
+                            class="btn btn-outline-warning"
+                            onclick="clearLyrics()">
+                        <i class="fas fa-eraser"></i> Xóa
+                    </button>
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle"></i>
+                    Upload file .lrc (tự động làm sạch) hoặc nhập thủ công theo format [MM:SS.ms]Text
+                </small>
             </div>
 
-            <div class="form-group mb-3">
-                <label class="control-label">Mô Tả</label>
-                <textarea asp-for="PortfolioItem.Description" class="form-control"></textarea>
+            <!-- Lyrics Textarea -->
+            <textarea asp-for="PortfolioItem.Lyrics"
+                      id="lyrics-textarea"
+                      class="form-control bg-secondary text-white border-0 font-monospace"
+                      rows="12"
+                      placeholder="Nhập lyrics theo format LRC:
+
+[00:12.00]Dòng 1 của bài hát
+[00:18.50]Dòng 2 của bài hát
+[00:24.30]Dòng 3 của bài hát
+
+Hoặc nhập plain text (sẽ tự động ước tính timing)"></textarea>
+            <span asp-validation-for="PortfolioItem.Lyrics" class="text-danger"></span>
+
+            <!-- Lyrics Counter -->
+            <div class="mt-2 d-flex justify-content-between align-items-center">
+                <small class="text-success" id="lyrics-info" style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="lyrics-count">0</span> dòng lyrics
+                </small>
+                <small class="text-muted" id="lyrics-format-hint">
+                    <i class="fas fa-lightbulb"></i>
+                    <span id="format-type">Chưa có lyrics</span>
+                </small>
+            </div>
+        </div>
+
+        <!-- Files Upload -->
+        <div class="row mb-4">
+            <!-- Image Upload -->
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-image"></i> Ảnh Bìa (JPG/PNG) *
+                </label>
+                <input type="file"
+                       asp-for="ImageUpload"
+                       id="image-upload"
+                       class="form-control bg-secondary text-white border-0"
+                       accept="image/*"
+                       required />
+                <small class="text-muted">Kích thước đề xuất: 300x300px trở lên</small>
+
+                <!-- Image Preview -->
+                <div id="image-preview" class="mt-2" style="display: none;">
+                    <img id="preview-img" class="img-thumbnail" style="max-width: 200px; max-height: 200px; object-fit: cover;" />
+                </div>
             </div>
 
-            <div class="form-group mb-3">
-                <label class="control-label">Chọn Ảnh Bìa</label>
-                <input type="file" asp-for="ImageUpload" class="form-control" accept="image/*" />
-            </div>
+            <!-- Audio Upload -->
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-volume-up"></i> File Nhạc (MP3) *
+                </label>
+                <input type="file"
+                       asp-for="AudioUpload"
+                       id="audio-upload"
+                       class="form-control bg-secondary text-white border-0"
+                       accept="audio/*"
+                       required />
+                <small class="text-muted">Format hỗ trợ: MP3, WAV, OGG</small>
 
-            <div class="form-group mb-3">
-                <label class="control-label">Link Github/Web</label>
-                <input asp-for="PortfolioItem.ProjectUrl" class="form-control" />
+                <!-- Audio Preview -->
+                <div id="audio-preview" class="mt-2" style="display: none;">
+                    <audio id="preview-audio" controls class="w-100" style="max-height: 40px;">
+                    </audio>
+                </div>
             </div>
+        </div>
 
-            <div class="form-group">
-                <input type="submit" value="Lưu Dự Án" class="btn btn-primary" />
-                <a asp-page="/Index" class="btn btn-secondary">Hủy</a>
-            </div>
-        </form>
-    </div>
+        <!-- Project URL (Optional) -->
+        <div class="mb-4">
+            <label asp-for="PortfolioItem.ProjectUrl" class="form-label fw-bold">
+                <i class="fas fa-link"></i> Link Liên Quan (Tùy chọn)
+            </label>
+            <input asp-for="PortfolioItem.ProjectUrl"
+                   class="form-control bg-secondary text-white border-0"
+                   placeholder="https://github.com/username/repo hoặc link khác..." />
+            <small class="text-muted">Link Github, Spotify, YouTube, SoundCloud, v.v...</small>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="btn btn-success btn-lg rounded-pill px-5 fw-bold">
+                <i class="fas fa-save"></i> Lưu Bài Hát
+            </button>
+            <a asp-page="/Index" class="btn btn-outline-light btn-lg rounded-pill px-4">
+                <i class="fas fa-times"></i> Hủy
+            </a>
+            <button type="reset" class="btn btn-outline-danger btn-lg rounded-pill px-4">
+                <i class="fas fa-redo"></i> Reset Form
+            </button>
+        </div>
+    </form>
 </div>
+
+@section Scripts {
+    <script>
+        // LRC File Upload and Clean
+        document.getElementById('lrc-file-upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const rawContent = e.target.result;
+                const cleanedLyrics = cleanLRCContent(rawContent);
+                document.getElementById('lyrics-textarea').value = cleanedLyrics;
+                updateLyricsInfo();
+
+                // Show success message
+                const lineCount = cleanedLyrics.split('\n').filter(l => l.trim()).length;
+                alert('✅ File LRC đã được tải lên và làm sạch thành công!\n\n' +
+                      'Tổng số dòng: ' + lineCount);
+            };
+            reader.readAsText(file);
+        });
+
+        // Clean LRC Content Function
+        function cleanLRCContent(content) {
+            const lines = content.split(/\r?\n/);
+            const cleanedLines = [];
+
+            lines.forEach(line => {
+                // Match pattern: [MM:SS.ms] text
+                const match = line.match(/^\[(\d{2}:\d{2}\.\d{2})\]\s*(.+)$/);
+
+                if (match) {
+                    const timestamp = match[1];
+                    let text = match[2];
+
+                    // Remove word-level timestamps like <00:12.73>
+                    text = text.replace(/<\d{2}:\d{2}\.\d{2}>/g, '');
+
+                    // Remove asterisks and special chars
+                    text = text.replace(/\*/g, '').replace(/\(/g, '(').replace(/\)/g, ')');
+
+                    // Clean up extra spaces
+                    text = text.replace(/\s+/g, ' ').trim();
+
+                    // Skip empty lines
+                    if (text) {
+                        cleanedLines.push('[' + timestamp + ']' + text);
+                    }
+                }
+            });
+
+            return cleanedLines.join('\n');
+        }
+
+        // Clear lyrics
+        function clearLyrics() {
+            if (confirm('Bạn có chắc muốn xóa toàn bộ lyrics?')) {
+                document.getElementById('lyrics-textarea').value = '';
+                document.getElementById('lrc-file-upload').value = '';
+                updateLyricsInfo();
+            }
+        }
+
+        // Update lyrics info and detect format
+        function updateLyricsInfo() {
+            const textarea = document.getElementById('lyrics-textarea');
+            const info = document.getElementById('lyrics-info');
+            const count = document.getElementById('lyrics-count');
+            const formatHint = document.getElementById('format-type');
+
+            if (textarea.value.trim()) {
+                const lines = textarea.value.split('\n').filter(l => l.trim());
+                count.textContent = lines.length;
+                info.style.display = 'inline-block';
+
+                // Detect format
+                const hasLRC = /^\[\d{2}:\d{2}\.\d{2}\]/.test(textarea.value);
+                if (hasLRC) {
+                    formatHint.innerHTML = '<i class="fas fa-check text-success"></i> Format LRC (có timestamp)';
+                } else {
+                    formatHint.innerHTML = '<i class="fas fa-info-circle text-warning"></i> Plain text (tự động timing)';
+                }
+            } else {
+                info.style.display = 'none';
+                formatHint.textContent = 'Chưa có lyrics';
+            }
+        }
+
+        // Image Preview
+        document.getElementById('image-upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('preview-img').src = e.target.result;
+                    document.getElementById('image-preview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Audio Preview
+        document.getElementById('audio-upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                const audio = document.getElementById('preview-audio');
+                audio.src = url;
+                document.getElementById('audio-preview').style.display = 'block';
+            }
+        });
+
+        // Update lyrics info on input
+        document.getElementById('lyrics-textarea').addEventListener('input', updateLyricsInfo);
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const title = document.querySelector('[name="PortfolioItem.Title"]').value;
+            const description = document.querySelector('[name="PortfolioItem.Description"]').value;
+            const image = document.getElementById('image-upload').files.length;
+            const audio = document.getElementById('audio-upload').files.length;
+
+            if (!title || !description || !image || !audio) {
+                e.preventDefault();
+                alert('⚠️ Vui lòng điền đầy đủ thông tin bắt buộc:\n\n' +
+                      '- Tên bài hát\n' +
+                      '- Mô tả\n' +
+                      '- Ảnh bìa\n' +
+                      '- File nhạc');
+                return false;
+            }
+        });
+
+        // Initial check
+        updateLyricsInfo();
+    </script>
+}

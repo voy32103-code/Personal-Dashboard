@@ -1,60 +1,90 @@
 ﻿@page
+@using MyPortfolio.Web.Pages
 @model IndexModel
 @{
     ViewData["Title"] = "Trang Chủ";
 }
 
-<div class="text-center mb-5">
-    <h1 class="display-4 fw-bold">My Portfolio</h1>
-    <p class="lead">Chào mừng đến với bộ sưu tập dự án .NET Core của tôi!</p>
-
-    <a href="/Portfolio/Create" class="btn btn-success btn-lg">
-        + Thêm Dự Án Mới
-    </a>
+<div class="d-flex justify-content-between align-items-center mb-4 ps-3 pe-3 pt-3">
+    <h2 class="text-white fw-bold">Dự Án Nổi Bật</h2>
+    @if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        <a asp-page="./Portfolio/Create" class="btn btn-success btn-sm rounded-pill fw-bold">
+            <i class="fas fa-plus"></i> Thêm bài mới
+        </a>
+    }
 </div>
 
-<div class="container">
-    <div class="row">
-        @if (Model.Projects.Count == 0)
+<div class="card-grid ps-3 pe-3">
+    @if (Model.Projects != null && Model.Projects.Count > 0)
+    {
+        @foreach (var item in Model.Projects)
         {
-            <div class="alert alert-warning text-center">
-                Chưa có dự án nào. Hãy bấm nút "Thêm Dự Án Mới" ở trên nhé!
-            </div>
-        }
-        else
-        {
-            @foreach (var item in Model.Projects)
-            {
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/300x200?text=No+Image" : item.ImageUrl)"
-                             class="card-img-top"
-                             alt="@item.Title"
-                             style="height: 200px; object-fit: cover;">
-
-                        <div class="card-body">
-                            <h5 class="card-title fw-bold">@item.Title</h5>
-                            <p class="card-text text-muted">
-                                @(item.Description.Length > 100 ? item.Description.Substring(0, 100) + "..." : item.Description)
-                            </p>
-                        </div>
-
-                        <div class="card-footer bg-white border-top-0 pb-3 d-flex justify-content-between">
-                            <a href="@item.ProjectUrl" target="_blank" class="btn btn-outline-primary btn-sm">
-                                Xem Demo
-                            </a>
-                            <div>
-                                <a asp-page="/Portfolio/Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">
-                                    Sửa
-                                </a>
-                                <a asp-page="/Portfolio/Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">
-                                    Xóa
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+            <!-- ĐỔI THÀNH THẺ <a> ĐỂ LINK ĐẾN TRANG DETAILS -->
+            <a asp-page="./Portfolio/Details" asp-route-id="@item.Id" class="spotify-card text-decoration-none">
+                <div style="position: relative;">
+                    <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/150" : item.ImageUrl)"
+                         class="card-img" alt="@item.Title" />
+                    <!-- ĐÃ XÓA NÚT PLAY -->
                 </div>
-            }
+
+                <div class="card-title text-white">@item.Title</div>
+                <div class="card-desc">@item.Description</div>
+
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <div class="mt-3 d-flex justify-content-between align-items-center stop-prop">
+                        <a asp-page="./Portfolio/Edit" asp-route-id="@item.Id"
+                           class="text-muted text-decoration-none small hover-white">
+                            <i class="fas fa-pen"></i> Sửa
+                        </a>
+                        <a asp-page="./Portfolio/Delete" asp-route-id="@item.Id"
+                           class="text-muted text-decoration-none small hover-white">
+                            <i class="fas fa-trash"></i> Xóa
+                        </a>
+                    </div>
+                }
+            </a>
         }
-    </div>
+    }
+    else
+    {
+        <div class="text-white ps-2">
+            <p>Chưa có dự án nào. Admin hãy thêm mới nhé!</p>
+        </div>
+    }
 </div>
+
+<style>
+    .hover-white:hover {
+        color: #fff !important;
+        text-decoration: underline !important;
+    }
+
+    /* Thêm hiệu ứng hover cho card */
+    .spotify-card {
+        transition: transform 0.2s, background-color 0.2s;
+    }
+
+        .spotify-card:hover {
+            transform: scale(1.02);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+</style>
+
+<script>
+    // Chặn sự kiện click cho nút Sửa/Xóa để không trigger link của card
+    document.querySelectorAll('.stop-prop').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            e.preventDefault(); // Ngăn link cha
+            e.stopPropagation(); // Ngăn nổi bọt
+        });
+    });
+
+    // Cho phép link Sửa/Xóa hoạt động bình thường
+    document.querySelectorAll('.stop-prop a').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.stopPropagation(); // Chỉ ngăn nổi bọt, cho phép link hoạt động
+        });
+    });
+</script>

@@ -3,69 +3,241 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - MyPortfolio.Web</title>
+    <title>@ViewData["Title"] - My Spotify Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/MyPortfolio.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">MyPortfolio.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                    </ul>
+    <div class="spotify-layout">
 
-                    <ul class="navbar-nav">
-                        @if (User.Identity != null && User.Identity.IsAuthenticated)
-                        {
-                            <li class="nav-item">
-                                <span class="nav-link text-dark fw-bold">Hello, @User.Identity.Name!</span>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link btn btn-link text-danger" asp-page="/Login" asp-page-handler="Logout">
-                                    Logout
-                                </a>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark fw-bold" asp-page="/Login">Login</a>
-                            </li>
-                        }
-                    </ul>
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <a href="/" class="logo">
+                <i class="fab fa-spotify"></i> My Portfolio
+            </a>
 
+            <div class="nav-links">
+                <a href="/" class="nav-btn active">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="#" class="nav-btn">
+                    <i class="fas fa-search"></i> Search
+                </a>
+                <a href="#" class="nav-btn">
+                    <i class="fas fa-book"></i> Your Library
+                </a>
+
+                <div style="height: 16px;"></div>
+
+                <a href="/Portfolio/Create" class="nav-btn">
+                    <i class="fas fa-plus-square"></i> Create Project
+                </a>
+
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <a href="/Login?handler=Logout" class="nav-btn text-danger">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                }
+                else
+                {
+                    <a href="/Login" class="nav-btn">
+                        <i class="fas fa-sign-in-alt"></i> Login Admin
+                    </a>
+                }
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-view">
+            @RenderBody()
+        </div>
+
+        <!-- PLAYER BAR -->
+        <div class="player-bar">
+            <!-- Left: Song Info -->
+            <div class="player-info">
+                <img id="current-img"
+                     src="https://via.placeholder.com/56"
+                     alt="Cover"
+                     style="width: 56px; height: 56px; border-radius: 4px; display: none; object-fit: cover;" />
+                <div id="song-info" style="display: none;">
+                    <div id="current-title" class="player-song-title">Chọn dự án...</div>
+                    <div id="current-desc" class="player-song-artist">để phát demo</div>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+
+            <!-- Center: Player Controls -->
+            <div class="player-controls">
+                <div class="control-buttons">
+                    <button class="btn-control" title="Shuffle">
+                        <i class="fas fa-random"></i>
+                    </button>
+                    <button class="btn-control" title="Previous">
+                        <i class="fas fa-step-backward"></i>
+                    </button>
+                    <button class="btn-control btn-play-pause" onclick="togglePlay()" title="Play/Pause">
+                        <i class="fas fa-play" id="play-icon"></i>
+                    </button>
+                    <button class="btn-control" title="Next">
+                        <i class="fas fa-step-forward"></i>
+                    </button>
+                    <button class="btn-control btn-repeat" id="repeat-btn" onclick="toggleRepeat()" title="Repeat Off">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-bar-container">
+                    <span id="current-time" class="time-label">0:00</span>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-bg">
+                            <div id="progress-bar" class="progress-bar-fill"></div>
+                        </div>
+                    </div>
+                    <span id="duration-time" class="time-label">0:00</span>
+                </div>
+            </div>
+
+            <!-- Right: Volume Controls (placeholder) -->
+            <div class="player-right">
+                <button class="btn-control" title="Volume">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - MyPortfolio.Web - <a asp-area="" asp-page="/Privacy">Privacy</a>
-        </div>
-    </footer>
+    <audio id="audio-player"></audio>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        var audio = document.getElementById("audio-player");
+        var playIcon = document.getElementById("play-icon");
+        var progressBar = document.getElementById("progress-bar");
+        var currentTimeLabel = document.getElementById("current-time");
+        var durationTimeLabel = document.getElementById("duration-time");
+        var repeatBtn = document.getElementById("repeat-btn");
+        var isRepeat = false;
+
+        // Hàm format thời gian (giây -> mm:ss)
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "0:00";
+            var mins = Math.floor(seconds / 60);
+            var secs = Math.floor(seconds % 60);
+            return mins + ":" + (secs < 10 ? "0" : "") + secs;
+        }
+
+        // Toggle Repeat
+                function toggleRepeat() {
+            isRepeat = !isRepeat;
+            audio.loop = isRepeat;
+
+            if (isRepeat) {
+                repeatBtn.classList.add("active");
+                repeatBtn.style.color = "#1db954";
+                repeatBtn.setAttribute("title", "Repeat On");
+
+                // Nếu đang phát thì quay lại từ đầu ngay
+                if (!audio.paused) {
+                    audio.currentTime = 0;
+                    audio.play();
+                }
+            } else {
+                repeatBtn.classList.remove("active");
+                repeatBtn.style.color = "#b3b3b3";
+                repeatBtn.setAttribute("title", "Repeat Off");
+            }
+        }
+
+
+        // Hàm phát nhạc
+        function playMusic(url, title, img, desc) {
+            if (!url) {
+                alert("Dự án này chưa có file nhạc!");
+                return;
+            }
+
+            // Cập nhật thông tin bài hát
+            document.getElementById("current-title").innerText = title;
+            document.getElementById("current-desc").innerText = desc;
+            document.getElementById("current-img").src = img;
+            document.getElementById("current-img").style.display = "block";
+            document.getElementById("song-info").style.display = "block";
+
+            // Phát nhạc
+            audio.src = url;
+            audio.play();
+
+            // Cập nhật icon
+            playIcon.classList.remove("fa-play");
+            playIcon.classList.add("fa-pause");
+        }
+
+        // Toggle Play/Pause
+        function togglePlay() {
+            if (!audio.src || audio.src === window.location.href) {
+                alert("Vui lòng chọn một dự án để nghe demo!");
+                return;
+            }
+
+            if (audio.paused) {
+                audio.play();
+                playIcon.classList.remove("fa-play");
+                playIcon.classList.add("fa-pause");
+            } else {
+                audio.pause();
+                playIcon.classList.remove("fa-pause");
+                playIcon.classList.add("fa-play");
+            }
+        }
+
+        // Cập nhật progress bar và thời gian
+        audio.addEventListener("timeupdate", function() {
+            if (audio.duration) {
+                var percent = (audio.currentTime / audio.duration) * 100;
+                progressBar.style.width = percent + "%";
+                currentTimeLabel.innerText = formatTime(audio.currentTime);
+
+                // Trigger event cho lyrics sync (nếu có)
+                window.dispatchEvent(new CustomEvent('audioTimeUpdate', {
+                    detail: { currentTime: audio.currentTime }
+                }));
+            }
+        });
+
+        // Cập nhật duration khi metadata loaded
+        audio.addEventListener("loadedmetadata", function() {
+            durationTimeLabel.innerText = formatTime(audio.duration);
+        });
+
+        // Reset khi bài hát kết thúc (nếu không repeat)
+        audio.addEventListener("ended", function() {
+            if (!isRepeat) {
+                playIcon.classList.remove("fa-pause");
+                playIcon.classList.add("fa-play");
+                progressBar.style.width = "0%";
+                currentTimeLabel.innerText = "0:00";
+            } else {
+                // Nếu repeat đang bật, phát lại ngay
+                audio.currentTime = 0;
+                audio.play();
+            }
+        });
+
+        // Click vào progress bar để seek
+        document.querySelector(".progress-bar-wrapper").addEventListener("click", function(e) {
+            if (audio.duration) {
+                var rect = this.getBoundingClientRect();
+                var percent = (e.clientX - rect.left) / rect.width;
+                audio.currentTime = percent * audio.duration;
+            }
+        });
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

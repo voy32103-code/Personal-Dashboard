@@ -1,0 +1,322 @@
+﻿@page "{id:int}"
+@model MyPortfolio.Web.Pages.Portfolio.DetailsModel
+@{
+    ViewData["Title"] = Model.PortfolioItem.Title;
+}
+
+<style>
+    .detail-container { padding: 40px; color: white; }
+    
+    /* Phần Header: Ảnh to + Thông tin */
+    .song-header { display: flex; gap: 40px; margin-bottom: 40px; }
+    .song-cover-big { 
+        width: 300px; height: 300px; 
+        object-fit: cover; border-radius: 12px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+    }
+    .song-info { display: flex; flex-direction: column; justify-content: flex-end; }
+    .song-title-big { font-size: 3rem; font-weight: 800; margin-bottom: 10px; }
+    .song-artist-big { font-size: 1.2rem; color: #b3b3b3; display: flex; align-items: center; gap: 10px; }
+    
+    /* Các nút chức năng */
+    .action-buttons { margin-top: 20px; display: flex; gap: 15px; }
+    .btn-play-big {
+        background-color: #1db954; color: black; border: none;
+        padding: 12px 35px; border-radius: 30px;
+        font-weight: bold; font-size: 1.1rem; text-transform: uppercase;
+        display: flex; align-items: center; gap: 10px; transition: 0.2s;
+        cursor: pointer;
+    }
+    .btn-play-big:hover { transform: scale(1.05); background-color: #1ed760; }
+    .btn-outline-gray {
+        background: transparent; border: 1px solid #727272; color: white;
+        padding: 12px 30px; border-radius: 30px; font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .btn-outline-gray:hover {
+        border-color: #fff;
+    }
+    .btn-icon { 
+        background: transparent; 
+        border: none; 
+        color: #b3b3b3; 
+        font-size: 1.5rem; 
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .btn-icon:hover {
+        color: #fff;
+    }
+
+    /* Phần Lyrics và Artist bên dưới */
+    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 50px; }
+    .lyrics-box { 
+        background: #181818; 
+        padding: 30px; 
+        border-radius: 10px; 
+        line-height: 2.2; 
+        color: #e0e0e0; 
+        font-size: 1.1rem;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    /* Lyrics Line Styling */
+    .lyrics-line {
+        padding: 8px 0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border-radius: 4px;
+        padding-left: 10px;
+        margin-left: -10px;
+    }
+    
+    .lyrics-line:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .lyrics-line.active {
+        color: #1db954;
+        font-weight: 700;
+        font-size: 1.35rem;
+        transform: scale(1.02);
+        background: rgba(29, 185, 84, 0.1);
+        padding-left: 15px;
+    }
+    
+    .lyrics-line.past {
+        color: #888;
+        opacity: 0.6;
+    }
+    
+    .lyrics-line.upcoming {
+        color: #b3b3b3;
+    }
+    
+    .artist-box { 
+        background: #181818; 
+        padding: 20px; 
+        border-radius: 10px; 
+        text-align: center; 
+        height: fit-content; 
+    }
+    .artist-avatar { 
+        width: 120px; 
+        height: 120px; 
+        border-radius: 50%; 
+        margin-bottom: 15px; 
+        object-fit: cover; 
+    }
+
+    /* Custom scrollbar */
+    .lyrics-box::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .lyrics-box::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .lyrics-box::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+    }
+
+    .lyrics-box::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Responsive */
+    @@media (max-width: 992px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+        .song-header {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .song-title-big {
+            font-size: 2rem;
+        }
+    }
+</style>
+
+<div class="detail-container">
+    <div class="song-header">
+        <img src="@Model.PortfolioItem.ImageUrl" class="song-cover-big" alt="@Model.PortfolioItem.Title" />
+        
+        <div class="song-info">
+            <div class="text-uppercase text-warning fw-bold small">Song</div>
+            <div class="song-title-big">@Model.PortfolioItem.Title</div>
+            
+            <div class="song-artist-big">
+                <img src="@Model.PortfolioItem.ImageUrl" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;" alt="Artist" /> 
+                @(Model.PortfolioItem.Artist ?? "Unknown Artist")
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-play-big" id="play-detail-btn"
+                        onclick="playMusic('@Model.PortfolioItem.AudioUrl', '@Model.PortfolioItem.Title', '@Model.PortfolioItem.ImageUrl', '@(Model.PortfolioItem.Artist ?? "Unknown")')">
+                    <i class="fas fa-play"></i> Play
+                </button>
+                
+                <button class="btn-outline-gray"><i class="fas fa-download"></i> Download</button>
+                <button class="btn-icon"><i class="far fa-heart"></i></button>
+                <button class="btn-icon"><i class="fas fa-ellipsis-h"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div>
+            <h3 class="fw-bold mb-3">Lyrics</h3>
+            <div class="lyrics-box" id="lyrics-container">
+                @if (string.IsNullOrEmpty(Model.PortfolioItem.Lyrics))
+                {
+                    <p>Chưa có lời bài hát...</p>
+                }
+                else
+                {
+                    <div id="lyrics-data" style="display: none;">@Model.PortfolioItem.Lyrics</div>
+                    <div id="lyrics-display"></div>
+                }
+            </div>
+        </div>
+
+        <div>
+            <h3 class="fw-bold mb-3">Artist</h3>
+            <div class="artist-box">
+                <img src="@Model.PortfolioItem.ImageUrl" class="artist-avatar" alt="@Model.PortfolioItem.Artist" />
+                <h5 class="fw-bold">@(Model.PortfolioItem.Artist ?? "Unknown Artist")</h5>
+                <button class="btn btn-outline-light btn-sm rounded-pill mt-2 px-4">Follow</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Lyrics sync system
+    var lyricsData = [];
+    var currentLyricIndex = -1;
+    var lyricsContainer = document.getElementById('lyrics-container');
+    var lyricsDisplay = document.getElementById('lyrics-display');
+    var lyricsRaw = document.getElementById('lyrics-data');
+    
+    // Parse lyrics (hỗ trợ cả LRC format và plain text)
+    function parseLyrics(text) {
+        if (!text) return [];
+        
+        var lines = text.split(/\r?\n/);
+        var parsed = [];
+        var hasTimestamp = false;
+        
+        lines.forEach(function(line) {
+            // LRC format: [00:12.00]Text here
+            var match = line.match(/\[(\d{2}):(\d{2})\.(\d{2})\](.*)/);
+            if (match) {
+                hasTimestamp = true;
+                var minutes = parseInt(match[1]);
+                var seconds = parseInt(match[2]);
+                var centiseconds = parseInt(match[3]);
+                var time = minutes * 60 + seconds + centiseconds / 100;
+                var text = match[4].trim();
+                
+                if (text) {
+                    parsed.push({ time: time, text: text });
+                }
+            } else if (line.trim()) {
+                // Plain text format - auto estimate timing
+                parsed.push({ time: null, text: line.trim() });
+            }
+        });
+        
+        // Nếu không có timestamp, tự động tạo
+        if (!hasTimestamp && parsed.length > 0) {
+            parsed.forEach(function(item, index) {
+                item.time = index * 3.5; // 3.5 giây mỗi dòng
+            });
+        }
+        
+        return parsed;
+    }
+    
+    // Render lyrics
+    function renderLyrics() {
+        if (!lyricsRaw || !lyricsDisplay) return;
+        
+        lyricsData = parseLyrics(lyricsRaw.textContent);
+        
+        if (lyricsData.length === 0) {
+            lyricsDisplay.innerHTML = '<p>Chưa có lời bài hát...</p>';
+            return;
+        }
+        
+        var html = '';
+        lyricsData.forEach(function(line, index) {
+            html += '<div class="lyrics-line upcoming" data-index="' + index + '" data-time="' + line.time + '">' 
+                  + line.text + '</div>';
+        });
+        lyricsDisplay.innerHTML = html;
+        
+        // Add click listeners
+        document.querySelectorAll('.lyrics-line').forEach(function(element) {
+            element.addEventListener('click', function() {
+                var time = parseFloat(this.getAttribute('data-time'));
+                var audio = document.getElementById('audio-player');
+                if (audio && !isNaN(time)) {
+                    audio.currentTime = time;
+                }
+            });
+        });
+    }
+    
+    // Update active lyric based on current time
+    function updateLyrics(currentTime) {
+        if (lyricsData.length === 0) return;
+        
+        // Find current lyric index
+        var newIndex = -1;
+        for (var i = 0; i < lyricsData.length; i++) {
+            if (currentTime >= lyricsData[i].time) {
+                newIndex = i;
+            } else {
+                break;
+            }
+        }
+        
+        // Update if changed
+        if (newIndex !== currentLyricIndex) {
+            currentLyricIndex = newIndex;
+            
+            var lines = document.querySelectorAll('.lyrics-line');
+            lines.forEach(function(line, index) {
+                line.classList.remove('active', 'past', 'upcoming');
+                
+                if (index < currentLyricIndex) {
+                    line.classList.add('past');
+                } else if (index === currentLyricIndex) {
+                    line.classList.add('active');
+                    // Auto scroll
+                    line.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                } else {
+                    line.classList.add('upcoming');
+                }
+            });
+        }
+    }
+    
+    // Listen to audio time updates
+    window.addEventListener('audioTimeUpdate', function(e) {
+        updateLyrics(e.detail.currentTime);
+    });
+    
+    // Initialize lyrics on page load
+    if (lyricsRaw && lyricsRaw.textContent.trim()) {
+        renderLyrics();
+    }
+</script>

@@ -26,6 +26,11 @@ builder.Services.AddDefaultIdentity<Microsoft.AspNetCore.Identity.IdentityUser>(
 builder.Services.ConfigureApplicationCookie(options => {
     options.LoginPath = "/Login";
 });
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    // Cho phép upload file lên tới 100MB (số tính bằng bytes)
+    options.MultipartBodyLengthLimit = 100 * 1024 * 1024;
+});
 
 // 2. Đăng ký Razor Pages
 builder.Services.AddRazorPages();

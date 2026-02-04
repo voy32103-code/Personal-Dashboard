@@ -8,5 +8,9 @@
         public string ImageUrl { get; set; } = string.Empty;    // Link ảnh demo
         public string ProjectUrl { get; set; } = string.Empty;  // Link Github/Web
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public string? AudioUrl { get; set; } // Dấu ? nghĩa là có thể null (không bắt buộc)
+        public string? Artist { get; set; } // Tên ca sĩ
+        public string? Lyrics { get; set; } // Lời bài hát
+        
     }
 }
