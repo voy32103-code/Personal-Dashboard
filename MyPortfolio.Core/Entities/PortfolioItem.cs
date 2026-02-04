@@ -11,6 +11,6 @@
         public string? AudioUrl { get; set; } // Dấu ? nghĩa là có thể null (không bắt buộc)
         public string? Artist { get; set; } // Tên ca sĩ
         public string? Lyrics { get; set; } // Lời bài hát
-        
+        public bool IsFavorite { get; set; } = false;
     }
 }

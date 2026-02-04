@@ -102,9 +102,15 @@
 
             <!-- Right: Volume Controls (placeholder) -->
             <div class="player-right">
-                <button class="btn-control" title="Volume">
-                    <i class="fas fa-volume-up"></i>
+                <button class="btn-control" onclick="toggleMute()" id="volume-btn">
+                    <i class="fas fa-volume-up" id="volume-icon"></i>
                 </button>
+
+                <div class="volume-bar-wrapper">
+                    <input type="range" id="volume-slider" class="volume-slider"
+                           min="0" max="1" step="0.01" value="1"
+                           oninput="setVolume(this.value)">
+                </div>
             </div>
         </div>
     </div>
@@ -237,6 +243,49 @@
                 audio.currentTime = percent * audio.duration;
             }
         });
+            // --- XỬ LÝ ÂM LƯỢNG (VOLUME) ---
+        var volumeSlider = document.getElementById("volume-slider");
+        var volumeIcon = document.getElementById("volume-icon");
+        var lastVolume = 1; // Lưu lại mức âm lượng trước khi Mute
+
+        // 1. Hàm chỉnh âm lượng khi kéo thanh
+        function setVolume(val) {
+            audio.volume = val;
+            updateVolumeIcon(val);
+
+            // Tô màu xanh cho phần đã kéo (Hiệu ứng visual)
+            var percent = val * 100;
+            volumeSlider.style.background = `linear-gradient(to right, #1db954 ${percent}%, #4d4d4d ${percent}%)`;
+        }
+
+        // 2. Hàm bật/tắt tiếng (Mute)
+        function toggleMute() {
+            if (audio.volume > 0) {
+                lastVolume = audio.volume; // Nhớ mức cũ
+                audio.volume = 0;
+                volumeSlider.value = 0;
+                setVolume(0);
+            } else {
+                audio.volume = lastVolume; // Khôi phục mức cũ
+                volumeSlider.value = lastVolume;
+                setVolume(lastVolume);
+            }
+        }
+
+        // 3. Cập nhật icon loa theo mức âm lượng
+        function updateVolumeIcon(vol) {
+            volumeIcon.className = ''; // Xóa class cũ
+            if (vol == 0) {
+                volumeIcon.className = 'fas fa-volume-mute'; // Loa tắt
+            } else if (vol < 0.5) {
+                volumeIcon.className = 'fas fa-volume-down'; // Loa nhỏ
+            } else {
+                volumeIcon.className = 'fas fa-volume-up';   // Loa to
+            }
+        }
+
+        // Khởi tạo màu thanh slider lúc đầu
+        setVolume(1);
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

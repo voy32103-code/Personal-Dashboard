@@ -5,318 +5,368 @@
 }
 
 <style>
-    .detail-container { padding: 40px; color: white; }
-    
-    /* Phần Header: Ảnh to + Thông tin */
-    .song-header { display: flex; gap: 40px; margin-bottom: 40px; }
-    .song-cover-big { 
-        width: 300px; height: 300px; 
-        object-fit: cover; border-radius: 12px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-    }
-    .song-info { display: flex; flex-direction: column; justify-content: flex-end; }
-    .song-title-big { font-size: 3rem; font-weight: 800; margin-bottom: 10px; }
-    .song-artist-big { font-size: 1.2rem; color: #b3b3b3; display: flex; align-items: center; gap: 10px; }
-    
-    /* Các nút chức năng */
-    .action-buttons { margin-top: 20px; display: flex; gap: 15px; }
-    .btn-play-big {
-        background-color: #1db954; color: black; border: none;
-        padding: 12px 35px; border-radius: 30px;
-        font-weight: bold; font-size: 1.1rem; text-transform: uppercase;
-        display: flex; align-items: center; gap: 10px; transition: 0.2s;
-        cursor: pointer;
-    }
-    .btn-play-big:hover { transform: scale(1.05); background-color: #1ed760; }
-    .btn-outline-gray {
-        background: transparent; border: 1px solid #727272; color: white;
-        padding: 12px 30px; border-radius: 30px; font-weight: bold;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-    .btn-outline-gray:hover {
-        border-color: #fff;
-    }
-    .btn-icon { 
-        background: transparent; 
-        border: none; 
-        color: #b3b3b3; 
-        font-size: 1.5rem; 
-        cursor: pointer;
-        transition: 0.2s;
-    }
-    .btn-icon:hover {
-        color: #fff;
+    .detail-container {
+        padding: 40px;
+        color: white;
+        padding-bottom: 120px;
     }
 
-    /* Phần Lyrics và Artist bên dưới */
-    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 50px; }
-    .lyrics-box { 
-        background: #181818; 
-        padding: 30px; 
-        border-radius: 10px; 
-        line-height: 2.2; 
-        color: #e0e0e0; 
-        font-size: 1.1rem;
-        max-height: 600px;
-        overflow-y: auto;
+    /* Header: Ảnh to + Thông tin */
+    .song-header {
+        display: flex;
+        gap: 40px;
+        margin-bottom: 40px;
+        align-items: flex-end;
     }
-    
-    /* Lyrics Line Styling */
-    .lyrics-line {
-        padding: 8px 0;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        border-radius: 4px;
-        padding-left: 10px;
-        margin-left: -10px;
+
+    .song-cover-big {
+        width: 300px;
+        height: 300px;
+        object-fit: cover;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.6);
     }
-    
-    .lyrics-line:hover {
-        background: rgba(255, 255, 255, 0.1);
+
+    .song-info {
+        display: flex;
+        flex-direction: column;
     }
-    
-    .lyrics-line.active {
-        color: #1db954;
-        font-weight: 700;
-        font-size: 1.35rem;
-        transform: scale(1.02);
-        background: rgba(29, 185, 84, 0.1);
-        padding-left: 15px;
+
+    .song-type {
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 8px;
     }
-    
-    .lyrics-line.past {
-        color: #888;
-        opacity: 0.6;
+
+    .song-title-big {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 20px;
+        line-height: 1.1;
     }
-    
-    .lyrics-line.upcoming {
+
+    .song-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1rem;
         color: #b3b3b3;
     }
-    
-    .artist-box { 
-        background: #181818; 
-        padding: 20px; 
-        border-radius: 10px; 
-        text-align: center; 
-        height: fit-content; 
-    }
-    .artist-avatar { 
-        width: 120px; 
-        height: 120px; 
-        border-radius: 50%; 
-        margin-bottom: 15px; 
-        object-fit: cover; 
+
+    .artist-avatar-small {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        object-fit: cover;
     }
 
-    /* Custom scrollbar */
-    .lyrics-box::-webkit-scrollbar {
-        width: 8px;
+    .meta-dot {
+        font-size: 0.8rem;
     }
 
-    .lyrics-box::-webkit-scrollbar-track {
+    /* Nút bấm (Actions) */
+    .action-buttons {
+        margin-top: 30px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .btn-play-big {
+        background-color: #1db954;
+        color: black;
+        border: none;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+        .btn-play-big:hover {
+            transform: scale(1.05);
+            background-color: #1ed760;
+        }
+
+    .btn-icon-action {
         background: transparent;
+        border: none;
+        color: #b3b3b3;
+        font-size: 2rem;
+        transition: 0.2s;
     }
 
-    .lyrics-box::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 4px;
+        .btn-icon-action:hover {
+            color: white;
+            transform: scale(1.1);
+        }
+
+    .text-spotify {
+        color: #1db954 !important;
     }
 
-    .lyrics-box::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.5);
+    /* Layout Grid: Lyrics & Artist */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1.8fr 1fr;
+        gap: 60px;
+        margin-top: 40px;
     }
 
-    /* Responsive */
-    @@media (max-width: 992px) {
-        .content-grid {
-            grid-template-columns: 1fr;
+    /* Lyrics Box (Hiệu ứng Kara) */
+    .lyrics-container {
+        margin-top: 20px;
+    }
+
+    .lyrics-line {
+        font-size: 1.5rem;
+        color: #b3b3b3;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+        .lyrics-line:hover {
+            color: white;
         }
-        .song-header {
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
+
+        .lyrics-line.active {
+            color: white;
+            font-size: 1.7rem;
+            transform: scale(1.02);
+            origin: left;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
         }
-        .song-title-big {
-            font-size: 2rem;
+
+    /* Artist Box */
+    .artist-section {
+    }
+
+    .artist-card {
+        background: #181818;
+        padding: 20px;
+        border-radius: 8px;
+        transition: 0.3s;
+        cursor: pointer;
+    }
+
+        .artist-card:hover {
+            background: #282828;
         }
+
+    .artist-img-large {
+        width: 100%;
+        aspect-ratio: 1/1;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 15px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    @@media (max-width: 768px) {
+        .song-header
+
+    {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .song-cover-big {
+        width: 220px;
+        height: 220px;
+    }
+
+    .song-title-big {
+        font-size: 2rem;
+    }
+
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
     }
 </style>
 
 <div class="detail-container">
     <div class="song-header">
-        <img src="@Model.PortfolioItem.ImageUrl" class="song-cover-big" alt="@Model.PortfolioItem.Title" />
-        
+        <img src="@(string.IsNullOrEmpty(Model.PortfolioItem.ImageUrl) ? "https://via.placeholder.com/300" : Model.PortfolioItem.ImageUrl)"
+             class="song-cover-big" />
+
         <div class="song-info">
-            <div class="text-uppercase text-warning fw-bold small">Song</div>
+            <div class="song-type">Song</div>
             <div class="song-title-big">@Model.PortfolioItem.Title</div>
-            
-            <div class="song-artist-big">
-                <img src="@Model.PortfolioItem.ImageUrl" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;" alt="Artist" /> 
-                @(Model.PortfolioItem.Artist ?? "Unknown Artist")
+
+            <div class="song-meta">
+                <img src="@Model.PortfolioItem.ImageUrl" class="artist-avatar-small" /> <span class="fw-bold text-white">@(Model.PortfolioItem.Artist ?? "Unknown Artist")</span>
+                <span class="meta-dot">•</span>
+                <span>@Model.PortfolioItem.CreatedDate.ToString("yyyy")</span>
+                <span class="meta-dot">•</span>
+                <span>3:45</span>
             </div>
 
             <div class="action-buttons">
-                <button class="btn-play-big" id="play-detail-btn"
-                        onclick="playMusic('@Model.PortfolioItem.AudioUrl', '@Model.PortfolioItem.Title', '@Model.PortfolioItem.ImageUrl', '@(Model.PortfolioItem.Artist ?? "Unknown")')">
-                    <i class="fas fa-play"></i> Play
+                <button class="btn-play-big" onclick="playCurrentSong()">
+                    <i class="fas fa-play"></i>
                 </button>
-                
-                <button class="btn-outline-gray"><i class="fas fa-download"></i> Download</button>
-                <button class="btn-icon"><i class="far fa-heart"></i></button>
-                <button class="btn-icon"><i class="fas fa-ellipsis-h"></i></button>
+
+                <form method="post" asp-page-handler="ToggleHeart" asp-route-id="@Model.PortfolioItem.Id" class="d-inline">
+                    <button type="submit" class="btn-icon-action">
+                        @if (Model.PortfolioItem.IsFavorite)
+                        {
+                            <i class="fas fa-heart text-spotify"></i>
+                        }
+                        else
+                        {
+                            <i class="far fa-heart"></i>
+                        }
+                    </button>
+                </form>
+
+                <button class="btn-icon-action"><i class="fas fa-ellipsis-h"></i></button>
             </div>
         </div>
     </div>
 
     <div class="content-grid">
         <div>
-            <h3 class="fw-bold mb-3">Lyrics</h3>
-            <div class="lyrics-box" id="lyrics-container">
-                @if (string.IsNullOrEmpty(Model.PortfolioItem.Lyrics))
-                {
-                    <p>Chưa có lời bài hát...</p>
-                }
-                else
-                {
-                    <div id="lyrics-data" style="display: none;">@Model.PortfolioItem.Lyrics</div>
-                    <div id="lyrics-display"></div>
-                }
+            <h3 class="fw-bold mb-4">Lyrics</h3>
+            <div class="lyrics-container" id="lyrics-display">
+                <div class="text-muted">Loading lyrics...</div>
             </div>
+
+            <textarea id="raw-lyrics" style="display:none;">@Model.PortfolioItem.Lyrics</textarea>
         </div>
 
-        <div>
-            <h3 class="fw-bold mb-3">Artist</h3>
-            <div class="artist-box">
-                <img src="@Model.PortfolioItem.ImageUrl" class="artist-avatar" alt="@Model.PortfolioItem.Artist" />
-                <h5 class="fw-bold">@(Model.PortfolioItem.Artist ?? "Unknown Artist")</h5>
-                <button class="btn btn-outline-light btn-sm rounded-pill mt-2 px-4">Follow</button>
+        <div class="artist-section">
+            <h3 class="fw-bold mb-4">Artist</h3>
+            <div class="artist-card">
+                <img src="@Model.PortfolioItem.ImageUrl" class="artist-img-large" />
+                <div class="fw-bold fs-5 mb-2">@(Model.PortfolioItem.Artist ?? "Unknown Artist")</div>
+                <div class="text-muted small mb-3">Artist</div>
+                <button class="btn btn-outline-light rounded-pill btn-sm px-3 fw-bold text-uppercase">Follow</button>
+            </div>
+
+            <div class="mt-5 p-4 rounded" style="background: #2a2a2a;">
+                <h5 class="fw-bold mb-3">About this project</h5>
+                <p class="text-gray mb-0">@Model.PortfolioItem.Description</p>
+                @if (!string.IsNullOrEmpty(Model.PortfolioItem.ProjectUrl))
+                {
+                    <a href="@Model.PortfolioItem.ProjectUrl" target="_blank" class="btn btn-dark rounded-pill mt-3 btn-sm">
+                        <i class="fab fa-github"></i> View Source
+                    </a>
+                }
             </div>
         </div>
     </div>
 </div>
+@section Scripts {
+    <script>
+        // --- 1. TỰ ĐỘNG PHÁT NHẠC KHI VÀO TRANG ---
+        $(document).ready(function() {
+            var audioUrl = '@Model.PortfolioItem.AudioUrl';
+            // Chỉ phát nếu có link nhạc
+            if (audioUrl && audioUrl.length > 0) {
+                playMusic(
+                    '@Model.PortfolioItem.AudioUrl',       // Link nhạc
+                    '@Model.PortfolioItem.Title',          // Tên bài
+                    '@Model.PortfolioItem.ImageUrl',       // Ảnh bìa
+                    '@Model.PortfolioItem.Artist'          // Ca sĩ
+                );
+            }
+        });
 
-<script>
-    // Lyrics sync system
-    var lyricsData = [];
-    var currentLyricIndex = -1;
-    var lyricsContainer = document.getElementById('lyrics-container');
-    var lyricsDisplay = document.getElementById('lyrics-display');
-    var lyricsRaw = document.getElementById('lyrics-data');
-    
-    // Parse lyrics (hỗ trợ cả LRC format và plain text)
-    function parseLyrics(text) {
-        if (!text) return [];
-        
-        var lines = text.split(/\r?\n/);
-        var parsed = [];
-        var hasTimestamp = false;
-        
-        lines.forEach(function(line) {
-            // LRC format: [00:12.00]Text here
-            var match = line.match(/\[(\d{2}):(\d{2})\.(\d{2})\](.*)/);
-            if (match) {
-                hasTimestamp = true;
-                var minutes = parseInt(match[1]);
-                var seconds = parseInt(match[2]);
-                var centiseconds = parseInt(match[3]);
-                var time = minutes * 60 + seconds + centiseconds / 100;
-                var text = match[4].trim();
-                
-                if (text) {
-                    parsed.push({ time: time, text: text });
-                }
-            } else if (line.trim()) {
-                // Plain text format - auto estimate timing
-                parsed.push({ time: null, text: line.trim() });
-            }
-        });
-        
-        // Nếu không có timestamp, tự động tạo
-        if (!hasTimestamp && parsed.length > 0) {
-            parsed.forEach(function(item, index) {
-                item.time = index * 3.5; // 3.5 giây mỗi dòng
-            });
+        // --- 2. HÀM PHÁT NHẠC (Nút Play to) ---
+        function playCurrentSong() {
+            playMusic(
+                '@Model.PortfolioItem.AudioUrl',
+                '@Model.PortfolioItem.Title',
+                '@Model.PortfolioItem.ImageUrl',
+                '@Model.PortfolioItem.Artist'
+            );
         }
-        
-        return parsed;
-    }
-    
-    // Render lyrics
-    function renderLyrics() {
-        if (!lyricsRaw || !lyricsDisplay) return;
-        
-        lyricsData = parseLyrics(lyricsRaw.textContent);
-        
-        if (lyricsData.length === 0) {
-            lyricsDisplay.innerHTML = '<p>Chưa có lời bài hát...</p>';
-            return;
-        }
-        
-        var html = '';
-        lyricsData.forEach(function(line, index) {
-            html += '<div class="lyrics-line upcoming" data-index="' + index + '" data-time="' + line.time + '">' 
-                  + line.text + '</div>';
-        });
-        lyricsDisplay.innerHTML = html;
-        
-        // Add click listeners
-        document.querySelectorAll('.lyrics-line').forEach(function(element) {
-            element.addEventListener('click', function() {
-                var time = parseFloat(this.getAttribute('data-time'));
-                var audio = document.getElementById('audio-player');
-                if (audio && !isNaN(time)) {
-                    audio.currentTime = time;
+
+        // --- 3. XỬ LYRICS SYNC ---
+        const rawLyrics = document.getElementById('raw-lyrics').value;
+        const lyricsContainer = document.getElementById('lyrics-display');
+        let lyricsData = [];
+
+        // Hàm parse LRC
+        function parseLyrics(lrc) {
+            const lines = lrc.split('\n');
+            const result = [];
+            lines.forEach(line => {
+                const match = line.match(/^\[(\d{2}):(\d{2})\.(\d{2})\](.*)/);
+                if (match) {
+                    const minutes = parseInt(match[1]);
+                    const seconds = parseInt(match[2]);
+                    const millis = parseInt(match[3]);
+                    const time = minutes * 60 + seconds + millis / 100;
+                    const text = match[4].trim();
+                    if(text) result.push({ time, text });
                 }
             });
-        });
-    }
-    
-    // Update active lyric based on current time
-    function updateLyrics(currentTime) {
-        if (lyricsData.length === 0) return;
-        
-        // Find current lyric index
-        var newIndex = -1;
-        for (var i = 0; i < lyricsData.length; i++) {
-            if (currentTime >= lyricsData[i].time) {
-                newIndex = i;
+            return result;
+        }
+
+        // Render Lyrics
+        if (rawLyrics && rawLyrics.trim().length > 0) {
+            lyricsData = parseLyrics(rawLyrics);
+            if (lyricsData.length > 0) {
+                lyricsContainer.innerHTML = lyricsData.map((line, index) =>
+                    `<div class="lyrics-line" id="line-${index}" onclick="seekTo(${line.time})">${line.text}</div>`
+                ).join('');
             } else {
-                break;
+                lyricsContainer.innerHTML = `<div class="text-gray" style="white-space: pre-line; line-height: 1.8;">${rawLyrics}</div>`;
+            }
+        } else {
+            lyricsContainer.innerHTML = '<div class="text-muted fst-italic">Chưa có lời bài hát cho dự án này.</div>';
+        }
+
+        // --- 4. ĐỒNG BỘ LYRICS KHI NHẠC CHẠY ---
+        window.addEventListener('audioTimeUpdate', function(e) {
+            const currentTime = e.detail.currentTime;
+
+            // Tìm dòng đang hát
+            let activeIndex = -1;
+            for (let i = 0; i < lyricsData.length; i++) {
+                if (currentTime >= lyricsData[i].time) {
+                    activeIndex = i;
+                } else {
+                    break;
+                }
+            }
+
+            // Highlight dòng đó
+            if (activeIndex !== -1) {
+                document.querySelectorAll('.lyrics-line').forEach(el => el.classList.remove('active'));
+                const activeLine = document.getElementById(`line-${activeIndex}`);
+                if (activeLine) {
+                    activeLine.classList.add('active');
+                    activeLine.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }
+        });
+
+        // --- 5. TUA NHẠC KHI BẤM VÀO LỜI ---
+        function seekTo(time) {
+            const audio = document.getElementById('audio-player');
+            if(audio) {
+                audio.currentTime = time;
+                audio.play();
+                // Đổi icon Play thành Pause
+                const playIcon = document.getElementById('play-icon');
+                if(playIcon) {
+                    playIcon.classList.remove('fa-play');
+                    playIcon.classList.add('fa-pause');
+                }
             }
         }
-        
-        // Update if changed
-        if (newIndex !== currentLyricIndex) {
-            currentLyricIndex = newIndex;
-            
-            var lines = document.querySelectorAll('.lyrics-line');
-            lines.forEach(function(line, index) {
-                line.classList.remove('active', 'past', 'upcoming');
-                
-                if (index < currentLyricIndex) {
-                    line.classList.add('past');
-                } else if (index === currentLyricIndex) {
-                    line.classList.add('active');
-                    // Auto scroll
-                    line.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                } else {
-                    line.classList.add('upcoming');
-                }
-            });
-        }
-    }
-    
-    // Listen to audio time updates
-    window.addEventListener('audioTimeUpdate', function(e) {
-        updateLyrics(e.detail.currentTime);
-    });
-    
-    // Initialize lyrics on page load
-    if (lyricsRaw && lyricsRaw.textContent.trim()) {
-        renderLyrics();
-    }
-</script>
+    </script>
+}
