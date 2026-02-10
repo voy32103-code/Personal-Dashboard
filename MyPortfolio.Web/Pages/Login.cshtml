@@ -1,30 +1,65 @@
 ﻿@page
 @model MyPortfolio.Web.Pages.LoginModel
+@{
+    Layout = null; // Tắt layout chung để trang login đứng một mình cho đẹp
+    ViewData["Title"] = "Đăng Nhập Admin";
+}
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white text-center">
-                <h3>Đăng Nhập Admin</h3>
-            </div>
-            <div class="card-body">
-                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-                {
-                    <div class="alert alert-danger">@Model.ErrorMessage</div>
-                }
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - My Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="login-body">
 
-                <form method="post">
-                    <div class="mb-3">
-                        <label>Email</label>
-                        <input asp-for="Email" class="form-control" placeholder="admin@myportfolio.com" />
-                    </div>
-                    <div class="mb-3">
-                        <label>Password</label>
-                        <input asp-for="Password" type="password" class="form-control" />
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Vào Quản Lý</button>
-                </form>
+    <div class="login-card">
+        <div class="login-logo">
+            <i class="fab fa-spotify"></i>
+        </div>
+
+        <h2 class="text-white fw-bold mb-4">Đăng Nhập Admin</h2>
+        <p class="text-white-50 small mb-5">Đăng nhập để quản lý dự án và portfolio.</p>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger bg-danger text-white border-0 py-2 mb-4 small fw-bold">
+                <i class="fas fa-exclamation-circle"></i> @Model.ErrorMessage
             </div>
+        }
+
+        <form method="post">
+            <div class="form-group text-start mb-3">
+                <label class="text-white fw-bold small mb-2 ms-1">Email</label>
+                <input asp-for="Email"
+                       class="form-control form-control-spotify"
+                       placeholder="admin@example.com" />
+            </div>
+
+            <div class="form-group text-start mb-4">
+                <label class="text-white fw-bold small mb-2 ms-1">Mật khẩu</label>
+                <input asp-for="Password" type="password"
+                       class="form-control form-control-spotify"
+                       placeholder="Nhập mật khẩu..." />
+            </div>
+
+            <button type="submit" class="btn btn-login">
+                VÀO QUẢN LÝ
+            </button>
+        </form>
+
+        <div class="mt-5 border-top border-secondary pt-4">
+            <a href="/" class="text-white-50 text-decoration-none small fw-bold hover-white">
+                <i class="fas fa-arrow-left"></i> Quay lại Trang Chủ
+            </a>
         </div>
     </div>
-</div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
