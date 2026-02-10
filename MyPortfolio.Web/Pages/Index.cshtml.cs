@@ -80,5 +80,18 @@ namespace MyPortfolio.Web.Pages
             }
             return new JsonResult(new { success = true });
         }
+        // Trong file Pages/Index.cshtml.cs
+
+        public async Task<IActionResult> OnGetCountPlayAsync(int id)
+        {
+            var song = await _context.PortfolioItems.FindAsync(id);
+            if (song != null)
+            {
+                song.PlayCount++; // Tăng lượt nghe
+                await _context.SaveChangesAsync();
+                return new JsonResult(new { success = true, newCount = song.PlayCount });
+            }
+            return new JsonResult(new { success = false });
+        }
     }
 }

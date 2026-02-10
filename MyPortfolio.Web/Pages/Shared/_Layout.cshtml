@@ -4,10 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - My Portfolio</title>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="manifest" href="~/manifest.json">
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
     <meta name="theme-color" content="#1db954">
 </head>
@@ -107,7 +109,9 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+
     <script>
         // --- 1. KHỞI TẠO BIẾN ---
         var audio = document.getElementById("audio-player");
@@ -127,11 +131,10 @@
         var lastVolume = 1;
 
         // ==========================================
-        // 🔥 SIGNALR SETUP (TÍNH NĂNG NGHE CHUNG)
+        // 🔥 SIGNALR SETUP
         // ==========================================
         var connection = new signalR.HubConnectionBuilder().withUrl("/musicHub").build();
 
-        // 1. Nhận lệnh từ người khác (Server -> Client)
         connection.on("ReceiveMusicAction", function (action, url, time) {
             console.log("Nhận lệnh: " + action);
             if (action === "play") {
@@ -141,7 +144,10 @@
                 if (Math.abs(audio.currentTime - time) > 1) {
                     audio.currentTime = time;
                 }
-                audio.play();
+                var playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => { console.log("Tự động phát bị chặn: " + error); });
+                }
                 updatePlayIcon(true);
             } else if (action === "pause") {
                 audio.pause();
@@ -149,42 +155,47 @@
             }
         });
 
-        // 2. Bắt đầu kết nối
         connection.start().then(function () {
             console.log("Đã kết nối vào phòng nhạc!");
         }).catch(function (err) {
             return console.error(err.toString());
         });
 
-        // --- 2. HÀM PHÁT NHẠC & XỬ LÝ PLAYLIST ---
+        // ==========================================
+        // 🎵 LOGIC PHÁT NHẠC
+        // ==========================================
         function playMusic(url, title, img, desc, artist, listData) {
             if (listData) {
                 playlist = listData.map(item => ({
                     audioUrl: item.audioUrl || item.AudioUrl,
                     title: item.title || item.Title,
                     imageUrl: item.imageUrl || item.ImageUrl,
-                    artist: item.artist || item.Artist
+                    artist: item.artist || item.Artist,
+                    id: item.id || item.Id
                 }));
             } else if (playlist.length === 0) {
-                playlist = [{ audioUrl: url, title: title, imageUrl: img, artist: artist }];
+                playlist = [{ audioUrl: url, title: title, imageUrl: img, artist: artist, id: 0 }];
             }
 
             var foundIndex = playlist.findIndex(p => p.audioUrl === url);
             if (foundIndex !== -1) {
                 currentIndex = foundIndex;
             } else {
-                playlist.unshift({ audioUrl: url, title: title, imageUrl: img, artist: artist });
+                playlist.unshift({ audioUrl: url, title: title, imageUrl: img, artist: artist, id: 0 });
                 currentIndex = 0;
             }
+
             loadSong(playlist[currentIndex]);
 
             if (connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("SendMusicAction", "play", url, 0);
+                connection.invoke("SendMusicAction", "play", url, 0)
+                    .catch(err => console.error(err.toString()));
             }
         }
 
         function loadSong(song) {
             if (!song || !song.audioUrl) return;
+
             document.getElementById("current-title").innerText = song.title;
             document.getElementById("current-desc").innerText = song.artist || "Unknown";
             document.getElementById("current-img").src = song.imageUrl;
@@ -195,15 +206,28 @@
                 audio.src = song.audioUrl;
                 audio.play();
                 updatePlayIcon(true);
+
+                // API Đếm lượt nghe
+                var songId = song.id || 0;
+                if (songId > 0) {
+                     fetch('/?handler=CountPlay&id=' + songId)
+                        .then(res => {
+                            if(res.ok) console.log("Đã +1 lượt nghe cho ID: " + songId);
+                        })
+                        .catch(err => console.error(err));
+                }
+
             } else {
                 if (audio.paused) {
                     audio.play();
                     updatePlayIcon(true);
                 }
-            }
+            } // <-- ĐÃ KIỂM TRA KỸ DẤU ĐÓNG NGOẶC NÀY
         }
 
-        // --- 3. CÁC NÚT ĐIỀU KHIỂN ---
+        // ==========================================
+        // 🎮 NÚT ĐIỀU KHIỂN
+        // ==========================================
         function togglePlay() {
             if (!audio.src) return;
 
@@ -213,7 +237,7 @@
                 if (connection.state === signalR.HubConnectionState.Connected) {
                     connection.invoke("SendMusicAction", "play", audio.src, audio.currentTime);
                 }
-            } else {
+            } else { // <-- Đảm bảo 'if' bên trên đã đóng '}'
                 audio.pause();
                 updatePlayIcon(false);
                 if (connection.state === signalR.HubConnectionState.Connected) {
@@ -279,6 +303,7 @@
             repeatBtn.style.color = isRepeat ? "#1db954" : "#b3b3b3";
         }
 
+        // --- EVENTS ---
         audio.addEventListener("timeupdate", function() {
             if (audio.duration) {
                 var percent = (audio.currentTime / audio.duration) * 100;
@@ -313,6 +338,7 @@
             }
         });
 
+        // --- VOLUME ---
         function setVolume(val) {
             audio.volume = val;
             updateVolumeIcon(val);
@@ -347,6 +373,7 @@
 
         setVolume(1);
     </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -1,42 +1,20 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿// File: wwwroot/js/site.js
 
-// Write your JavaScript code.
-// 1. KẾT NỐI SERVER
-var connection = new signalR.HubConnectionBuilder().withUrl("/musicHub").build();
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("Site.js: Đã sẵn sàng!");
 
-connection.start().catch(err => console.error(err.toString()));
+    // --- TÍNH NĂNG KÉO THẢ (SORTABLE) ---
+    // Tìm thẻ chứa danh sách bài hát (Bạn nhớ đặt id="song-list" cho thẻ div bao quanh các bài hát ở file Index.cshtml nhé)
+    var songList = document.getElementById('song-list');
 
-// 2. NHẬN LỆNH TỪ SERVER
-connection.on("ReceiveMusicAction", function (action, url, time) {
-    if (action === "play") {
-        if (audio.src !== url) audio.src = url;
-        audio.currentTime = time;
-        audio.play();
-        updatePlayIcon(true);
-    } else if (action === "pause") {
-        audio.pause();
-        updatePlayIcon(false);
+    if (songList && typeof Sortable !== 'undefined') {
+        Sortable.create(songList, {
+            animation: 150, // Hiệu ứng mượt 150ms
+            ghostClass: 'sortable-ghost', // Class CSS khi đang kéo
+            onEnd: function (evt) {
+                console.log("Đã kéo bài hát từ vị trí " + evt.oldIndex + " sang " + evt.newIndex);
+            }
+        });
+        console.log("--> Đã kích hoạt tính năng Kéo Thả!");
     }
-});
-
-// 3. GỬI LỆNH ĐI (Sửa lại hàm togglePlay cũ)
-function togglePlay() {
-    if (!audio.src) return;
-
-    // Gửi tín hiệu lên server trước
-    if (audio.paused) {
-        audio.play();
-        updatePlayIcon(true);
-        connection.invoke("SendMusicAction", "play", audio.src, audio.currentTime);
-    } else {
-        audio.pause();
-        updatePlayIcon(false);
-        connection.invoke("SendMusicAction", "pause", audio.src, audio.currentTime);
-    }
-}
-// Trong hàm loadSong, sau khi audio.play()
-fetch(`/?handler=CountPlay&id=${song.id || currentIndex + 1}`, {
-    method: 'POST',
-    headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value }
 });

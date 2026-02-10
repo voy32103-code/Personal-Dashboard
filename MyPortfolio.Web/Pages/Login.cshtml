@@ -32,7 +32,7 @@
             </div>
         }
 
-        <form method="post">
+        <form method="post" class="mb-3">
             <div class="form-group text-start mb-3">
                 <label class="text-white-50 fw-bold small mb-2 ms-1">Email</label>
                 <input asp-for="Email" class="neumorph-input" placeholder="admin@example.com" />
@@ -46,9 +46,13 @@
             <button type="submit" class="neumorph-btn w-100 py-3 rounded-pill text-success text-uppercase" style="letter-spacing: 2px;">
                 Login
             </button>
-            <a href="/Login?handler=Google" class="btn btn-light w-100 mt-2">
-                <i class="fab fa-google text-danger"></i> Sign in with Google
-            </a>
+        </form>
+
+        <form asp-page-handler="ExternalLogin" method="post">
+            <button type="submit" name="provider" value="Google" class="btn btn-light w-100 py-2 fw-bold text-dark d-flex align-items-center justify-content-center gap-2">
+                <img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" width="20" />
+                Sign in with Google
+            </button>
         </form>
 
         <div class="mt-5 border-top border-secondary pt-4">

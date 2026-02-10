@@ -71,13 +71,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
-// --- QUAN TRỌNG: Phải có đủ cặp đôi này ---
-app.UseAuthentication(); // 1. Kiểm tra "Bạn là ai?" (Mới thêm vào)
-app.UseAuthorization();  // 2. Kiểm tra "Bạn có quyền không?"
-
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapRazorPages();
 app.MapHub<MusicHub>("/musicHub");
 
