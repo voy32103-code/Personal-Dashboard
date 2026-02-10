@@ -325,3 +325,91 @@ body {
 .hover-underline:hover {
     text-decoration: underline !important;
 }
+@media (max-width: 768px) {
+    /* 1. Bố cục: Biến Grid 2 cột thành 1 cột */
+    .spotify-layout {
+        grid-template-columns: 1fr; /* Chỉ còn 1 cột */
+        grid-template-rows: 1fr auto; /* Content ở trên, Player co giãn ở dưới */
+        gap: 0;
+        padding: 0;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    /* 2. Ẩn Sidebar (Menu trái) để lấy chỗ hiển thị nội dung */
+    /* Mẹo: Bạn có thể thêm nút Menu Hamburger sau nếu muốn, nhưng tạm thời ẩn đi cho gọn */
+    .sidebar {
+        display: none;
+    }
+
+    /* 3. Main View: Full màn hình */
+    .main-view {
+        grid-row: 1 / 2;
+        grid-column: 1 / 2;
+        border-radius: 0; /* Bỏ bo góc để trông liền mạch */
+        border: none;
+        padding-bottom: 150px; /* Khoảng trống để không bị Player Bar che mất nội dung cuối */
+    }
+
+    /* 4. Player Bar: Cố định ở đáy, tối giản hóa */
+    .player-bar {
+        grid-row: 2 / 3;
+        grid-column: 1 / 2;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: auto; /* Chiều cao tự động */
+        min-height: 90px;
+        padding: 10px 15px;
+        flex-direction: column; /* Xếp dọc các thành phần */
+        background: rgba(10, 10, 10, 0.98); /* Nền đậm hơn để dễ nhìn */
+        border-top: 1px solid rgba(255,255,255,0.15);
+        gap: 10px;
+    }
+
+        /* Điều chỉnh các thành phần bên trong Player Bar */
+
+        /* Phần Info bài hát (Trái): Hiện thị, canh giữa */
+        .player-bar > div:first-child {
+            width: 100% !important;
+            justify-content: flex-start;
+            margin-bottom: 5px;
+        }
+
+        /* Phần Nút điều khiển (Giữa): Full chiều rộng */
+        .player-bar > div:nth-child(2) {
+            width: 100% !important;
+        }
+
+        /* Phần Volume (Phải): Ẩn đi trên mobile cho đỡ rối (vì đt có nút volume cứng rồi) */
+        .player-bar > div:last-child {
+            display: none !important;
+        }
+
+    /* Nút Play to hơn chút cho dễ bấm */
+    .btn-play-round {
+        width: 45px;
+        height: 45px;
+        transform: scale(1.1);
+    }
+
+    /* 5. Chỉnh sửa Font chữ và Spacing */
+    .glitch-title {
+        font-size: 2.5rem !important; /* Giảm size chữ tiêu đề */
+    }
+
+    .glass-panel {
+        padding: 20px !important; /* Giảm padding thẻ kính */
+    }
+
+    .display-1 {
+        font-size: 2.5rem; /* Giảm size chữ header trang Details */
+    }
+
+    /* 6. Form Login */
+    .login-card {
+        padding: 20px;
+        width: 90%;
+    }
+}
