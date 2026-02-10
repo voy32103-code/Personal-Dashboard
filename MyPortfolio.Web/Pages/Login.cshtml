@@ -1,8 +1,7 @@
 ﻿@page
 @model MyPortfolio.Web.Pages.LoginModel
 @{
-    Layout = null; // Tắt layout chung để trang login đứng một mình cho đẹp
-    ViewData["Title"] = "Đăng Nhập Admin";
+    Layout = null; ViewData["Title"] = "Đăng Nhập Admin";
 }
 
 <!DOCTYPE html>
@@ -15,15 +14,16 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body class="login-body">
+<body class="login-body aurora-bg-container" style="position: relative; z-index: 1;">
+    <div class="aurora-blob blob-1"></div>
+    <div class="aurora-blob blob-2"></div>
 
-    <div class="login-card">
-        <div class="login-logo">
+    <div class="glass-panel p-5" style="width: 100%; max-width: 450px; text-align: center;">
+        <div class="login-logo mb-4 text-success display-3">
             <i class="fab fa-spotify"></i>
         </div>
 
-        <h2 class="text-white fw-bold mb-4">Đăng Nhập Admin</h2>
-        <p class="text-white-50 small mb-5">Đăng nhập để quản lý dự án và portfolio.</p>
+        <h2 class="glitch-text mb-4" data-text="ADMIN ACCESS">ADMIN ACCESS</h2>
 
         @if (!string.IsNullOrEmpty(Model.ErrorMessage))
         {
@@ -34,27 +34,23 @@
 
         <form method="post">
             <div class="form-group text-start mb-3">
-                <label class="text-white fw-bold small mb-2 ms-1">Email</label>
-                <input asp-for="Email"
-                       class="form-control form-control-spotify"
-                       placeholder="admin@example.com" />
+                <label class="text-white-50 fw-bold small mb-2 ms-1">Email</label>
+                <input asp-for="Email" class="neumorph-input" placeholder="admin@example.com" />
             </div>
 
             <div class="form-group text-start mb-4">
-                <label class="text-white fw-bold small mb-2 ms-1">Mật khẩu</label>
-                <input asp-for="Password" type="password"
-                       class="form-control form-control-spotify"
-                       placeholder="Nhập mật khẩu..." />
+                <label class="text-white-50 fw-bold small mb-2 ms-1">Password</label>
+                <input asp-for="Password" type="password" class="neumorph-input" placeholder="********" />
             </div>
 
-            <button type="submit" class="btn btn-login">
-                VÀO QUẢN LÝ
+            <button type="submit" class="neumorph-btn w-100 py-3 rounded-pill text-success text-uppercase" style="letter-spacing: 2px;">
+                Login
             </button>
         </form>
 
         <div class="mt-5 border-top border-secondary pt-4">
-            <a href="/" class="text-white-50 text-decoration-none small fw-bold hover-white">
-                <i class="fas fa-arrow-left"></i> Quay lại Trang Chủ
+            <a href="/" class="text-white-50 text-decoration-none small fw-bold hover-underline">
+                <i class="fas fa-arrow-left"></i> Back to Home
             </a>
         </div>
     </div>

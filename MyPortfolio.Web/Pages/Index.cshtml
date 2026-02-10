@@ -1,11 +1,9 @@
 ﻿@page
 @model IndexModel
 @using System.Text.Json
-@using MyPortfolio.Web.Pages
 @{
-    // Title được set trong Backend (Index.cshtml.cs)
-
-    // --- 1. TỐI ƯU HÓA: Tạo Playlist JSON 1 lần duy nhất ở đây ---
+    ViewData["Title"] = "Thư Viện Dự Án";
+    // Serialize danh sách bài hát thành JSON để nạp vào Playlist
     var allSongsJson = JsonSerializer.Serialize(Model.Projects.Select(p => new
     {
         audioUrl = p.AudioUrl,
@@ -15,185 +13,100 @@
     }));
 }
 
-<div class="d-flex flex-column mb-4 ps-3 pe-3 pt-3">
-    <div class="d-flex justify-content-between align-items-center">
-        <h2 class="text-white fw-bold" id="page-title">@ViewData["Title"]</h2>
-
-        @if (User.Identity != null && User.Identity.IsAuthenticated)
-        {
-            <a asp-page="./Portfolio/Create" class="btn btn-success btn-sm rounded-pill fw-bold">
-                <i class="fas fa-plus"></i> Thêm bài mới
-            </a>
-        }
-    </div>
-
-    <div id="search-container" class="mt-3" style="@(string.IsNullOrEmpty(Model.SearchString) ? "display:none;" : "display:block;")">
-        <form method="get">
-            <div class="input-group">
-                <span class="input-group-text bg-dark border-0 text-white"><i class="fas fa-search"></i></span>
-                <input type="text" name="SearchString" value="@Model.SearchString"
-                       class="form-control bg-dark border-0 text-white"
-                       placeholder="Bạn muốn nghe gì?" onchange="this.form.submit()">
-                <input type="hidden" name="Mode" value="@Model.Mode" />
-            </div>
-        </form>
-    </div>
+<div class="p-4 sticky-top" style="z-index: 10;">
+    <form method="get" class="d-flex gap-2 align-items-center">
+        <div class="flex-grow-1 position-relative">
+            <i class="fas fa-search position-absolute text-white-50" style="top: 50%; left: 15px; transform: translateY(-50%);"></i>
+            <input type="text" name="SearchString" value="@Model.SearchString"
+                   class="neumorph-input w-100 ps-5" placeholder="Tìm kiếm dự án, công nghệ...">
+            <input type="hidden" name="Mode" value="@Model.Mode" />
+        </div>
+        <button class="neumorph-btn rounded-circle" style="width: 48px; height: 48px;"><i class="fas fa-filter"></i></button>
+    </form>
 </div>
 
-<div class="card-grid ps-3 pe-3">
-    @if (Model.Projects != null && Model.Projects.Count > 0)
-    {
+<div class="px-4 pb-5">
+    <h2 class="glitch-text mb-4 fs-3" data-text="@ViewData["Title"]">@ViewData["Title"]</h2>
+
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
         @foreach (var item in Model.Projects)
         {
-            <div class="spotify-card position-relative" style="cursor: pointer;"
-                 onclick='playMusic(
-                     "@item.AudioUrl",
-                     "@item.Title",
-                     "@item.ImageUrl",
-                     "@item.Description",
-                     "@item.Artist",
-                     @Html.Raw(allSongsJson)
-                 )'>
+            <div class="col">
+                <div class="glass-panel glass-card-hover p-3 h-100 d-flex flex-column position-relative"
+                     onclick='playMusic(
+                         "@item.AudioUrl",
+                         "@item.Title",
+                         "@item.ImageUrl",
+                         "@item.Description",
+                         "@item.Artist",
+                         @Html.Raw(allSongsJson)
+                     )'>
 
-                <div style="position: relative;">
-                    <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/150" : item.ImageUrl)" class="card-img" />
-                </div>
+                    <div class="position-relative mb-3">
+                        <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/200" : item.ImageUrl)"
+                             class="w-100 rounded shadow-lg" style="aspect-ratio: 1/1; object-fit: cover;">
 
-                <div class="card-title text-white">
-                    <a href="/Portfolio/Details/@item.Id" class="text-white text-decoration-none stop-prop hover-underline">
-                        @item.Title
-                    </a>
-                </div>
-
-                <div class="card-desc">@item.Description</div>
-
-                <button type="button"
-                        class="btn btn-sm btn-transparent border-0 p-0 position-absolute top-0 end-0 m-2 stop-prop"
-                        onclick="toggleHeart(event, @item.Id, this)">
-                    @if (item.IsFavorite)
-                    {
-                        <i class="fas fa-heart fa-lg text-spotify heart-anim"></i>
-                    }
-                    else
-                    {
-                        <i class="far fa-heart fa-lg text-white-50 hover-bright"></i>
-                    }
-                </button>
-
-                @if (User.Identity != null && User.Identity.IsAuthenticated)
-                {
-                    <div class="mt-3 d-flex justify-content-between align-items-center stop-prop">
-                        <a asp-page="./Portfolio/Edit" asp-route-id="@item.Id" class="text-muted small hover-white text-decoration-none">
-                            <i class="fas fa-pen"></i>
-                        </a>
-                        <a asp-page="./Portfolio/Delete" asp-route-id="@item.Id" class="text-muted small hover-white text-decoration-none">
-                            <i class="fas fa-trash"></i>
-                        </a>
+                        <span class="clay-badge bg-primary position-absolute bottom-0 start-0 m-2 shadow-sm" style="font-size: 0.7rem;">
+                            @item.Artist
+                        </span>
                     </div>
-                }
+
+                    <div class="flex-grow-1">
+                        <a href="/Portfolio/Details/@item.Id"
+                           class="text-white text-decoration-none fw-bold fs-5 stop-prop hover-underline">
+                            @item.Title
+                        </a>
+                        <p class="text-white-50 small mt-1 text-truncate">@item.Description</p>
+                    </div>
+
+                    <button type="button" class="btn position-absolute top-0 end-0 m-2 text-white stop-prop"
+                            onclick="toggleHeart(event, @item.Id, this)">
+                        @if (item.IsFavorite)
+                        {
+                            <i class="fas fa-heart text-danger heart-anim"></i>
+                        }
+                        else
+                        {
+                            <i class="far fa-heart"></i>
+                        }
+                    </button>
+
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <div class="mt-3 d-flex justify-content-between align-items-center stop-prop">
+                            <a asp-page="./Portfolio/Edit" asp-route-id="@item.Id" class="text-muted small hover-white text-decoration-none"><i class="fas fa-pen"></i></a>
+                            <a asp-page="./Portfolio/Delete" asp-route-id="@item.Id" class="text-muted small hover-white text-decoration-none"><i class="fas fa-trash"></i></a>
+                        </div>
+                    }
+                </div>
             </div>
         }
-    }
-    else
-    {
-        <div class="text-white ps-2 opacity-75">
-            @if (Model.Mode == "library")
-            {
-                <p>Thư viện trống. Hãy thả tim <i class="fas fa-heart text-spotify"></i> vài bài hát nhé!</p>
-            }
-            else
-            {
-                <p>Không tìm thấy bài hát nào.</p>
-            }
-        </div>
-    }
+    </div>
 </div>
-
-<style>
-    .text-spotify {
-        color: #1db954 !important;
-    }
-
-    .btn-transparent {
-        background: transparent;
-    }
-
-    .heart-anim {
-        animation: heart-beat 0.3s ease-in-out;
-    }
-
-    @@keyframes heart-beat {
-        0% {
-            transform: scale(1);
-        }
-
-        50% {
-            transform: scale(1.3);
-        }
-
-        100% {
-            transform: scale(1);
-        }
-    }
-
-    .hover-bright:hover {
-        color: #fff !important;
-        transform: scale(1.1);
-        transition: 0.2s;
-    }
-
-    .hover-white:hover {
-        color: #fff !important;
-        text-decoration: underline !important;
-    }
-
-    .hover-underline:hover {
-        text-decoration: underline !important;
-    }
-
-    .spotify-card:hover {
-        transform: scale(1.02);
-        background-color: #282828;
-    }
-</style>
 
 @Html.AntiForgeryToken()
 <script>
-    // Ngăn chặn sự kiện click lan ra thẻ cha (dùng cho Link tiêu đề, nút Tim, nút Sửa/Xóa)
+    // Chặn sự kiện click (stop-prop) để không kích hoạt playMusic của thẻ cha
     document.querySelectorAll('.stop-prop').forEach(el => {
         el.addEventListener('click', e => {
             e.stopPropagation();
-            // Lưu ý: Không dùng e.preventDefault() ở đây để thẻ <a> vẫn chuyển trang được
         });
     });
 
-    // Logic thả tim AJAX (Không reload trang)
-    function toggleHeart(e, id, btnElement) {
-        e.stopPropagation(); // Ngăn phát nhạc
-        e.preventDefault();  // Ngăn hành vi mặc định
+    // AJAX Thả tim
+    function toggleHeart(e, id, btn) {
+        e.stopPropagation();
+        e.preventDefault();
 
-        var icon = btnElement.querySelector('i');
+        var icon = btn.querySelector('i');
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
         fetch(`?handler=ToggleHeart&id=${id}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'RequestVerificationToken': token
-            }
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token }
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                if (data.isFavorite) {
-                    icon.className = "fas fa-heart fa-lg text-spotify heart-anim";
-                } else {
-                    icon.className = "far fa-heart fa-lg text-white-50 hover-bright";
-                }
-            } else {
-                alert("Lỗi kết nối!");
-            }
-        })
-        .catch(error => console.error('Error:', error));
+        .then(r => r.json()).then(d => {
+            if(d.success) icon.className = d.isFavorite ? "fas fa-heart text-danger heart-anim" : "far fa-heart";
+        });
     }
 </script>

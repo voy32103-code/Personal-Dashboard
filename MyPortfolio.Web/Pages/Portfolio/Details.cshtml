@@ -4,264 +4,55 @@
     ViewData["Title"] = Model.PortfolioItem.Title;
 }
 
-<style>
-    .detail-container {
-        padding: 40px;
-        color: white;
-        padding-bottom: 120px;
-    }
+<div class="container-fluid p-0">
+    <div class="p-5 d-flex align-items-end gap-5 glass-panel m-4 mt-0 border-0"
+         style="background: linear-gradient(to bottom, rgba(0,0,0,0.2), #121212);">
 
-    /* Header: Ảnh to + Thông tin */
-    .song-header {
-        display: flex;
-        gap: 40px;
-        margin-bottom: 40px;
-        align-items: flex-end;
-    }
+        <div class="neumorph-btn p-1" style="border-radius: 8px; cursor: default;">
+            <img src="@Model.PortfolioItem.ImageUrl" class="rounded shadow" style="width: 250px; height: 250px; object-fit: cover;">
+        </div>
 
-    .song-cover-big {
-        width: 300px;
-        height: 300px;
-        object-fit: cover;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-    }
+        <div>
+            <span class="clay-badge bg-dark mb-2 d-inline-block">Project Detail</span>
+            <h1 class="glitch-text display-1 fw-bold mb-3" data-text="@Model.PortfolioItem.Title">@Model.PortfolioItem.Title</h1>
 
-    .song-info {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .song-type {
-        font-size: 0.9rem;
-        font-weight: bold;
-        text-transform: uppercase;
-        margin-bottom: 8px;
-    }
-
-    .song-title-big {
-        font-size: 3.5rem;
-        font-weight: 800;
-        margin-bottom: 20px;
-        line-height: 1.1;
-    }
-
-    .song-meta {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 1rem;
-        color: #b3b3b3;
-    }
-
-    .artist-avatar-small {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .meta-dot {
-        font-size: 0.8rem;
-    }
-
-    /* Nút bấm (Actions) */
-    .action-buttons {
-        margin-top: 30px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-    }
-
-    .btn-play-big {
-        background-color: #1db954;
-        color: black;
-        border: none;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        font-size: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: 0.2s;
-        cursor: pointer;
-    }
-
-        .btn-play-big:hover {
-            transform: scale(1.05);
-            background-color: #1ed760;
-        }
-
-    .btn-icon-action {
-        background: transparent;
-        border: none;
-        color: #b3b3b3;
-        font-size: 2rem;
-        transition: 0.2s;
-    }
-
-        .btn-icon-action:hover {
-            color: white;
-            transform: scale(1.1);
-        }
-
-    .text-spotify {
-        color: #1db954 !important;
-    }
-
-    /* Layout Grid: Lyrics & Artist */
-    .content-grid {
-        display: grid;
-        grid-template-columns: 1.8fr 1fr;
-        gap: 60px;
-        margin-top: 40px;
-    }
-
-    /* Lyrics Box (Hiệu ứng Kara) */
-    .lyrics-container {
-        margin-top: 20px;
-    }
-
-    .lyrics-line {
-        font-size: 1.5rem;
-        color: #b3b3b3;
-        margin-bottom: 20px;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        font-weight: 600;
-    }
-
-        .lyrics-line:hover {
-            color: white;
-        }
-
-        .lyrics-line.active {
-            color: white;
-            font-size: 1.7rem;
-            transform: scale(1.02);
-            origin: left;
-            text-shadow: 0 0 10px rgba(255,255,255,0.3);
-        }
-
-    /* Artist Box */
-    .artist-section {
-    }
-
-    .artist-card {
-        background: #181818;
-        padding: 20px;
-        border-radius: 8px;
-        transition: 0.3s;
-        cursor: pointer;
-    }
-
-        .artist-card:hover {
-            background: #282828;
-        }
-
-    .artist-img-large {
-        width: 100%;
-        aspect-ratio: 1/1;
-        border-radius: 50%;
-        object-fit: cover;
-        margin-bottom: 15px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-    }
-
-    @@media (max-width: 768px) {
-        .song-header
-
-    {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .song-cover-big {
-        width: 220px;
-        height: 220px;
-    }
-
-    .song-title-big {
-        font-size: 2rem;
-    }
-
-    .content-grid {
-        grid-template-columns: 1fr;
-    }
-
-    }
-</style>
-
-<div class="detail-container">
-    <div class="song-header">
-        <img src="@(string.IsNullOrEmpty(Model.PortfolioItem.ImageUrl) ? "https://via.placeholder.com/300" : Model.PortfolioItem.ImageUrl)"
-             class="song-cover-big" />
-
-        <div class="song-info">
-            <div class="song-type">Song</div>
-            <div class="song-title-big">@Model.PortfolioItem.Title</div>
-
-            <div class="song-meta">
-                <img src="@Model.PortfolioItem.ImageUrl" class="artist-avatar-small" /> <span class="fw-bold text-white">@(Model.PortfolioItem.Artist ?? "Unknown Artist")</span>
-                <span class="meta-dot">•</span>
+            <div class="d-flex align-items-center gap-2 text-white-50 fs-5">
+                <i class="fas fa-code text-success"></i>
+                <span class="fw-bold text-white">@Model.PortfolioItem.Artist</span>
+                <span>•</span>
                 <span>@Model.PortfolioItem.CreatedDate.ToString("yyyy")</span>
-                <span class="meta-dot">•</span>
-                <span>3:45</span>
             </div>
 
-            <div class="action-buttons">
-                <button class="btn-play-big" onclick="playCurrentSong()">
+            <div class="mt-4 d-flex gap-3">
+                <button class="neumorph-btn rounded-circle text-success" style="width: 60px; height: 60px; font-size: 1.5rem;" onclick="playCurrentSong()">
                     <i class="fas fa-play"></i>
                 </button>
-
-                <form method="post" asp-page-handler="ToggleHeart" asp-route-id="@Model.PortfolioItem.Id" class="d-inline">
-                    <button type="submit" class="btn-icon-action">
-                        @if (Model.PortfolioItem.IsFavorite)
-                        {
-                            <i class="fas fa-heart text-spotify"></i>
-                        }
-                        else
-                        {
-                            <i class="far fa-heart"></i>
-                        }
-                    </button>
-                </form>
-
-                <button class="btn-icon-action"><i class="fas fa-ellipsis-h"></i></button>
+                <a href="/Portfolio/Edit/@Model.PortfolioItem.Id" class="neumorph-btn px-4 rounded-pill text-decoration-none">Edit Project</a>
             </div>
         </div>
     </div>
 
-    <div class="content-grid">
-        <div>
-            <h3 class="fw-bold mb-4">Lyrics</h3>
-            <div class="lyrics-container" id="lyrics-display">
-                <div class="text-muted">Loading lyrics...</div>
+    <div class="row px-5 pb-5">
+        <div class="col-lg-8">
+            <h3 class="text-white fw-bold mb-4">Lyrics / Content</h3>
+            <div class="glass-panel p-4" style="min-height: 400px;">
+                <div id="lyrics-display" class="d-flex flex-column gap-3">
+                    <div class="text-muted">Loading content...</div>
+                </div>
             </div>
-
             <textarea id="raw-lyrics" style="display:none;">@Model.PortfolioItem.Lyrics</textarea>
         </div>
 
-        <div class="artist-section">
-            <h3 class="fw-bold mb-4">Artist</h3>
-            <div class="artist-card">
-                <img src="@Model.PortfolioItem.ImageUrl" class="artist-img-large" />
-                <div class="fw-bold fs-5 mb-2">@(Model.PortfolioItem.Artist ?? "Unknown Artist")</div>
-                <div class="text-muted small mb-3">Artist</div>
-                <button class="btn btn-outline-light rounded-pill btn-sm px-3 fw-bold text-uppercase">Follow</button>
-            </div>
+        <div class="col-lg-4">
+            <h3 class="text-white fw-bold mb-4">Tech Specs</h3>
+            <div class="glass-panel p-4">
+                <p class="text-white-50">@Model.PortfolioItem.Description</p>
 
-            <div class="mt-5 p-4 rounded" style="background: #2a2a2a;">
-                <h5 class="fw-bold mb-3">About this project</h5>
-                <p class="text-gray mb-0">@Model.PortfolioItem.Description</p>
-                @if (!string.IsNullOrEmpty(Model.PortfolioItem.ProjectUrl))
-                {
-                    <a href="@Model.PortfolioItem.ProjectUrl" target="_blank" class="btn btn-dark rounded-pill mt-3 btn-sm">
-                        <i class="fab fa-github"></i> View Source
-                    </a>
-                }
+                <div class="mt-4">
+                    <span class="clay-badge bg-primary me-2 mb-2 d-inline-block">.NET 8</span>
+                    <span class="clay-badge bg-info me-2 mb-2 d-inline-block">PostgreSQL</span>
+                    <span class="clay-badge bg-warning text-dark me-2 mb-2 d-inline-block">Render</span>
+                </div>
             </div>
         </div>
     </div>

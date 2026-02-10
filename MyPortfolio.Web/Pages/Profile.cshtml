@@ -1,144 +1,126 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Hồ Sơ Kỹ Thuật";
+    ViewData["Title"] = "Digital Profile";
 }
 
-<div class="profile-header position-relative" style="height: 340px; overflow: hidden;">
-    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-                background: linear-gradient(to bottom, #4c5c68, #121212); z-index: 1;"></div>
+<div class="profile-header position-relative aurora-bg">
+    <div class="aurora-blob blob-1"></div>
+    <div class="aurora-blob blob-2"></div>
+    <div class="aurora-blob blob-3"></div>
 
-    <div class="container-fluid h-100 position-relative d-flex align-items-end px-4 pb-4" style="z-index: 2;">
-        <div class="d-flex align-items-end gap-4">
-            <img src="https://via.placeholder.com/232"
-                 class="shadow-lg rounded-circle"
-                 style="width: 232px; height: 232px; object-fit: cover; border: 4px solid #121212;"
-                 alt="Avatar">
+    <div class="container-fluid h-100 position-relative d-flex align-items-end px-4 pb-5" style="z-index: 2;">
+        <div class="d-flex align-items-end gap-4 header-content">
+            <div class="neumorph-avatar-container">
+                <img src="https://via.placeholder.com/232"
+                     class="rounded-circle"
+                     style="width: 100%; height: 100%; object-fit: cover;"
+                     alt="Avatar">
+            </div>
 
             <div>
                 <div class="d-flex align-items-center gap-2 text-white mb-2">
-                    <span class="bg-primary text-white badge rounded-pill">
+                    <span class="clay-badge bg-primary">
                         <i class="fas fa-check-circle"></i> Verified Dev
                     </span>
-                    <span class="text-uppercase fw-bold small" style="letter-spacing: 1px;">Project Owner</span>
+                    <span class="clay-badge bg-dark text-uppercase small">Full-Stack</span>
                 </div>
 
-                <h1 class="text-white fw-bold mb-2 display-1" style="font-weight: 900;">Võ Hưng Yên</h1>
+                <h1 class="glitch-title mb-2" data-text="VÕ HƯNG YÊN">VÕ HƯNG YÊN</h1>
 
-                <p class="text-white opacity-75 fw-bold mb-0">
-                    Full-stack .NET Developer • Cloud Deployment • Audio Processing Specialist
+                <p class="text-white fw-bold mb-0 text-shadow-sm">
+                    1,204,392 Lines of Code • .NET Core Master • Audio Specialist
                 </p>
             </div>
         </div>
     </div>
 </div>
 
-<div class="container-fluid px-4 py-4" style="background: linear-gradient(#121212 0%, #000 100%); min-height: 500px;">
+<div class="container-fluid px-4 py-5" style="background: #121212; min-height: 500px; position: relative;">
 
-    <div class="mb-5 d-flex align-items-center gap-3">
-        <button class="btn btn-success rounded-circle d-flex align-items-center justify-content-center hover-scale"
-                style="width: 56px; height: 56px;">
-            <i class="fas fa-play fa-lg text-black"></i>
+    <div class="mb-5 d-flex align-items-center gap-4">
+        <button class="neumorph-btn-round text-success">
+            <i class="fas fa-play fa-lg"></i>
         </button>
-        <button class="btn btn-outline-light rounded-pill px-4 py-2 fw-bold text-uppercase border-white hover-scale">
-            Follow (Github)
+        <button class="neumorph-btn-pill text-white fw-bold text-uppercase">
+            Follow Github
         </button>
-        <button class="btn btn-transparent text-white fs-4 ms-2">
-            <i class="fas fa-ellipsis-h"></i>
+        <button class="neumorph-btn-round text-white fs-5 ms-auto">
+            <i class="fas fa-share-alt"></i>
         </button>
     </div>
 
     <div class="row g-5">
         <div class="col-lg-8">
-            <h3 class="text-white fw-bold mb-3">Project Tech Stack</h3>
-            <div class="d-flex flex-column">
+            <h3 class="text-white fw-bold mb-4 ps-2 border-start border-4 border-success">Tech Stack (Top Hits)</h3>
+            <div class="d-flex flex-column gap-3">
 
-                <div class="d-flex align-items-center p-2 rounded hover-row group-item">
-                    <div class="text-white-50 ms-2 me-3 fw-bold">1</div>
-                    <div class="me-3 text-white fs-4"><i class="fab fa-microsoft"></i></div>
+                <div class="glass-card d-flex align-items-center p-3">
+                    <div class="text-white-50 ms-2 me-4 fw-bold fs-5">01</div>
+                    <div class="me-4 text-white fs-2"><i class="fab fa-microsoft"></i></div>
                     <div class="flex-grow-1">
-                        <div class="text-white fw-bold">ASP.NET Core 8.0 (Razor Pages)</div>
-                        <div class="text-white-50 small">Backend Framework & MVC Pattern</div>
+                        <div class="text-white fw-bold fs-5">ASP.NET Core 8.0</div>
+                        <div class="text-white-50 small">Razor Pages & MVC Architecture</div>
                     </div>
-                    <div class="text-white-50 small d-none d-md-block">Core Logic</div>
-                    <div class="text-white-50 ms-4">Senior</div>
+                    <span class="clay-badge bg-success ms-3">Backend</span>
                 </div>
 
-                <div class="d-flex align-items-center p-2 rounded hover-row group-item">
-                    <div class="text-white-50 ms-2 me-3 fw-bold">2</div>
-                    <div class="me-3 text-success fs-4"><i class="fas fa-database"></i></div>
+                <div class="glass-card d-flex align-items-center p-3">
+                    <div class="text-white-50 ms-2 me-4 fw-bold fs-5">02</div>
+                    <div class="me-4 text-info fs-2"><i class="fas fa-database"></i></div>
                     <div class="flex-grow-1">
-                        <div class="text-white fw-bold">PostgreSQL (Neon Tech)</div>
-                        <div class="text-white-50 small">Serverless Database Cloud</div>
+                        <div class="text-white fw-bold">PostgreSQL (Neon)</div>
+                        <div class="text-white-50 small">Serverless Cloud Database</div>
                     </div>
-                    <div class="text-white-50 small d-none d-md-block">Data Storage</div>
-                    <div class="text-white-50 ms-4">Cloud</div>
+                    <span class="clay-badge bg-info ms-3">Data</span>
                 </div>
 
-                <div class="d-flex align-items-center p-2 rounded hover-row group-item">
-                    <div class="text-white-50 ms-2 me-3 fw-bold">3</div>
-                    <div class="me-3 text-info fs-4"><i class="fas fa-cloud-upload-alt"></i></div>
+                <div class="glass-card d-flex align-items-center p-3">
+                    <div class="text-white-50 ms-2 me-4 fw-bold fs-5">03</div>
+                    <div class="me-4 text-warning fs-2"><i class="fab fa-js"></i></div>
                     <div class="flex-grow-1">
-                        <div class="text-white fw-bold">Render Cloud Hosting</div>
-                        <div class="text-white-50 small">CI/CD Pipeline & Web Service</div>
+                        <div class="text-white fw-bold">Audio API Logic</div>
+                        <div class="text-white-50 small">Real-time Visualizer & Controls</div>
                     </div>
-                    <div class="text-white-50 small d-none d-md-block">DevOps</div>
-                    <div class="text-white-50 ms-4">Live</div>
+                    <span class="clay-badge bg-warning text-dark ms-3">Frontend</span>
                 </div>
 
-                <div class="d-flex align-items-center p-2 rounded hover-row group-item">
-                    <div class="text-white-50 ms-2 me-3 fw-bold">4</div>
-                    <div class="me-3 text-warning fs-4"><i class="fab fa-js"></i></div>
+                <div class="glass-card d-flex align-items-center p-3">
+                    <div class="text-white-50 ms-2 me-4 fw-bold fs-5">04</div>
+                    <div class="me-4 text-danger fs-2"><i class="fas fa-microphone-alt"></i></div>
                     <div class="flex-grow-1">
-                        <div class="text-white fw-bold">Advanced Audio API & AJAX</div>
-                        <div class="text-white-50 small">Music Player Logic & No-Reload Actions</div>
+                        <div class="text-white fw-bold">LRC Lyrics Parser</div>
+                        <div class="text-white-50 small">Regex Algorithm for Karaoke</div>
                     </div>
-                    <div class="text-white-50 small d-none d-md-block">Frontend</div>
-                    <div class="text-white-50 ms-4">Interactive</div>
-                </div>
-
-                <div class="d-flex align-items-center p-2 rounded hover-row group-item">
-                    <div class="text-white-50 ms-2 me-3 fw-bold">5</div>
-                    <div class="me-3 text-danger fs-4"><i class="fas fa-file-audio"></i></div>
-                    <div class="flex-grow-1">
-                        <div class="text-white fw-bold">LRC Lyrics Sync Algorithm</div>
-                        <div class="text-white-50 small">Custom Regex Parser for Karaoke Effect</div>
-                    </div>
-                    <div class="text-white-50 small d-none d-md-block">Algorithm</div>
-                    <div class="text-white-50 ms-4">Unique</div>
+                    <span class="clay-badge bg-danger ms-3">Algo</span>
                 </div>
 
             </div>
         </div>
 
         <div class="col-lg-4">
-            <h3 class="text-white fw-bold mb-3">About This Portfolio</h3>
-            <div class="bg-dark rounded p-4 position-relative overflow-hidden" style="min-height: 400px;">
-                <div style="position: absolute; top:0; left:0; width:100%; height:100%;
-                            background: url('https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=1000&auto=format&fit=crop') center/cover;
-                            opacity: 0.3;"></div>
+            <h3 class="text-white fw-bold mb-4 ps-2 border-start border-4 border-warning">System Status</h3>
+            <div class="cyber-card p-4">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <div class="led-indicator"></div>
+                    <span class="text-uppercase fw-bold text-success small" style="letter-spacing:2px;">System Online</span>
+                </div>
 
-                <div class="position-relative" style="z-index: 2;">
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                        <div class="bg-success rounded-circle" style="width: 10px; height: 10px;"></div>
-                        <span class="text-uppercase fw-bold text-white small">Live on Render</span>
-                    </div>
+                <p class="text-white fs-5 fw-bold" style="line-height: 1.6;">
+                    "Giao diện Spotify chỉ là lớp vỏ. Bên dưới là cỗ máy .NET Core mạnh mẽ."
+                </p>
 
-                    <p class="text-white fs-5 fw-bold">
-                        "Không chỉ là một trang web nghe nhạc, đây là minh chứng cho kỹ năng Full-stack .NET."
-                    </p>
+                <p class="text-white-50 small mt-3 border-top border-secondary pt-3">
+                    Dự án tích hợp đầy đủ các công nghệ hiện đại nhất:
+                    <br>• CI/CD tự động qua Render.
+                    <br>• Database trên mây với Neon.
+                    <br>• Giao diện Responsive mọi thiết bị.
+                </p>
 
-                    <p class="text-white-50 small mt-3">
-                        Dự án này được xây dựng từ con số 0 (Scratch) sử dụng mô hình MVC/Razor Pages.
-                        Dữ liệu được lưu trữ an toàn trên Neon (PostgreSQL) và triển khai tự động qua Render.
-                        Tính năng nổi bật nhất là xử lý file LRC để tạo hiệu ứng Karaoke Real-time.
-                    </p>
-
-                    <div class="mt-4 pt-4 border-top border-secondary">
-                        <a href="https://github.com/TênGithubCuaBan" target="_blank" class="text-white text-decoration-none fw-bold hover-underline">
-                            <i class="fab fa-github me-2"></i> View Source Code
-                        </a>
-                    </div>
+                <div class="mt-4">
+                    <a href="#" class="neumorph-btn-pill w-100 d-block text-center text-decoration-none text-white">
+                        <i class="fab fa-github me-2"></i> Access Source Code
+                    </a>
                 </div>
             </div>
         </div>
@@ -146,28 +128,239 @@
 </div>
 
 <style>
-    /* CSS Riêng cho trang Profile */
-    .hover-row:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        cursor: default;
+    /* --- 1. AURORA BACKGROUND (Nền Cực Quang) --- */
+    .aurora-bg {
+        height: 400px;
+        background-color: #050505;
+        position: relative;
+        overflow: hidden;
     }
 
-    .hover-scale:hover {
-        transform: scale(1.05);
+    .aurora-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.5;
+        animation: floatBlob 10s infinite ease-in-out alternate;
+    }
+
+    .blob-1 {
+        top: -10%;
+        left: -10%;
+        width: 50vw;
+        height: 50vw;
+        background: #1db954;
+    }
+
+    .blob-2 {
+        bottom: -10%;
+        right: -10%;
+        width: 40vw;
+        height: 40vw;
+        background: #7d2ae8;
+        animation-delay: -5s;
+    }
+
+    .blob-3 {
+        top: 30%;
+        left: 40%;
+        width: 30vw;
+        height: 30vw;
+        background: #00d4ff;
+        animation-delay: -2s;
+        opacity: 0.3;
+    }
+
+    @@keyframes floatBlob {
+        0%
+
+    {
+        transform: translate(0, 0) scale(1);
+    }
+
+    100% {
+        transform: translate(30px, 50px) scale(1.1);
+    }
+
+    }
+
+    /* --- 2. GLITCH EFFECT (Chữ Nhiễu) --- */
+    .glitch-title {
+        font-size: 5rem;
+        font-weight: 900;
+        color: white;
+        position: relative;
+        text-shadow: 2px 2px 0px #1db954;
+    }
+
+        .glitch-title::before, .glitch-title::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        .glitch-title::before {
+            left: 2px;
+            text-shadow: -1px 0 #ff00c1;
+            clip-path: inset(44% 0 61% 0);
+            animation: glitch-anim 2s infinite linear alternate-reverse;
+        }
+
+        .glitch-title::after {
+            left: -2px;
+            text-shadow: -1px 0 #00fff9;
+            clip-path: inset(54% 0 10% 0);
+            animation: glitch-anim 3s infinite linear alternate-reverse;
+        }
+    @@keyframes glitch-anim {
+        0%
+
+    {
+        clip-path: inset(20% 0 80% 0);
+    }
+
+    20% {
+        clip-path: inset(60% 0 10% 0);
+    }
+
+    40% {
+        clip-path: inset(40% 0 50% 0);
+    }
+
+    60% {
+        clip-path: inset(80% 0 5% 0);
+    }
+
+    80% {
+        clip-path: inset(10% 0 70% 0);
+    }
+
+    100% {
+        clip-path: inset(30% 0 20% 0);
+    }
+
+    }
+
+    /* --- 3. NEUMORPHISM (Nút bấm nổi) --- */
+    .neumorph-avatar-container {
+        width: 232px;
+        height: 232px;
+        border-radius: 50%;
+        padding: 8px;
+        background: #121212;
+        box-shadow: 10px 10px 20px #0a0a0a, -10px -10px 20px #1e1e1e;
+    }
+
+    .neumorph-btn-round {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #121212;
+        border: none;
+        box-shadow: 5px 5px 10px #0a0a0a, -5px -5px 10px #1e1e1e;
         transition: 0.2s;
     }
 
-    .hover-underline:hover {
-        text-decoration: underline !important;
+        .neumorph-btn-round:active {
+            box-shadow: inset 5px 5px 10px #0a0a0a, inset -5px -5px 10px #1e1e1e;
+            color: #1db954 !important;
+        }
+
+    .neumorph-btn-pill {
+        padding: 12px 30px;
+        border-radius: 50px;
+        background: #121212;
+        border: none;
+        box-shadow: 5px 5px 10px #0a0a0a, -5px -5px 10px #1e1e1e;
+        transition: 0.2s;
     }
 
-    /* Ẩn hiện số thứ tự khi hover (Giống Spotify) */
-    .group-item .fa-play {
-        display: none;
+        .neumorph-btn-pill:active {
+            box-shadow: inset 5px 5px 10px #0a0a0a, inset -5px -5px 10px #1e1e1e;
+        }
+
+    /* --- 4. GLASSMORPHISM (Thẻ kính mờ) --- */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        transition: 0.3s;
     }
 
-    .group-item:hover .text-white-50.fw-bold {
-        display: none;
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(10px);
+            border-color: rgba(29, 185, 84, 0.5);
+        }
+
+    /* --- 5. CLAYMORPHISM (Huy hiệu đất sét 3D) --- */
+    .clay-badge {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        color: white;
+        box-shadow: inset 2px 2px 4px rgba(255,255,255,0.3), inset -2px -2px 4px rgba(0,0,0,0.3), 5px 5px 10px rgba(0,0,0,0.5);
     }
-    /* (Có thể mở rộng thêm hiệu ứng play icon nếu muốn) */
+
+    /* --- EXTRA: CYBER CARD --- */
+    .cyber-card {
+        background: #0d0d0d;
+        border: 1px solid #333;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .cyber-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #ff00c1, #00fff9);
+        }
+
+    .led-indicator {
+        width: 12px;
+        height: 12px;
+        background-color: #1db954;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #1db954;
+        animation: blink 2s infinite;
+    }
+    @@keyframes blink {
+        50%
+
+    {
+        opacity: 0.5;
+    }
+
+    }
+
+    /* Mobile Responsive */
+    @@media (max-width: 768px) {
+        .glitch-title
+
+    {
+        font-size: 2.5rem;
+    }
+
+    .header-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .neumorph-avatar-container {
+        width: 150px;
+        height: 150px;
+    }
+
+    }
 </style>
