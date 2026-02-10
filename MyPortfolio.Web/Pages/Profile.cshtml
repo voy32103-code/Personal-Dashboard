@@ -1,5 +1,5 @@
 ﻿@page
-@model IndexModel
+@model MyPortfolio.Web.Pages.ProfileModel
 @{
     ViewData["Title"] = "Digital Profile";
 }
@@ -12,125 +12,163 @@
     <div class="container-fluid h-100 position-relative d-flex align-items-end px-4 pb-5" style="z-index: 2;">
         <div class="d-flex align-items-end gap-4 header-content">
             <div class="neumorph-avatar-container">
-                <img src="https://via.placeholder.com/232"
+                <img src="@Url.Content("~/uploads/e7d2d820-bceb-4d10-8c80-afb8d5a88220.jpg")"
                      class="rounded-circle"
-                     style="width: 100%; height: 100%; object-fit: cover;"
+                     onerror="this.src='https://via.placeholder.com/232?text=Avatar'"
+                     style="width: 100%; height: 100%; object-fit: cover; border: 4px solid #121212;"
                      alt="Avatar">
+                <div class="status-dot"></div>
             </div>
 
-            <div>
-                <div class="d-flex align-items-center gap-2 text-white mb-2">
+            <div class="mb-2">
+                <div class="d-flex align-items-center gap-2 text-white mb-2 flex-wrap">
                     <span class="clay-badge bg-primary">
                         <i class="fas fa-check-circle"></i> Verified Dev
                     </span>
-                    <span class="clay-badge bg-dark text-uppercase small">Full-Stack</span>
+                    <span class="clay-badge bg-dark text-uppercase small" style="border: 1px solid #333;">
+                        <i class="fas fa-code-branch"></i> Full-Stack
+                    </span>
+                    <span class="clay-badge bg-danger text-uppercase small">
+                        <i class="fas fa-fire"></i> Pro Tier
+                    </span>
                 </div>
 
-                <h1 class="glitch-title mb-2" data-text="VÕ HƯNG YÊN">VÕ HƯNG YÊN</h1>
+                <h1 class="glitch-title mb-2" data-text="@Model.FullName">@Model.FullName</h1>
 
-                <p class="text-white fw-bold mb-0 text-shadow-sm">
-                    1,204,392 Lines of Code • .NET Core Master • Audio Specialist
+                <p class="text-white fw-bold mb-0 text-shadow-sm d-flex align-items-center gap-2">
+                    <span id="loc-counter">0</span> Lines of Code • @Model.Title
                 </p>
             </div>
         </div>
     </div>
 </div>
 
-<div class="container-fluid px-4 py-5" style="background: #121212; min-height: 500px; position: relative;">
+<div class="container-fluid px-4 py-5" style="background: #121212; min-height: 600px; position: relative;">
 
-    <div class="mb-5 d-flex align-items-center gap-4">
-        <button class="neumorph-btn-round text-success">
+    <div class="mb-5 d-flex align-items-center gap-4 flex-wrap">
+        <button class="neumorph-btn-round text-success" title="Play Intro">
             <i class="fas fa-play fa-lg"></i>
         </button>
-        <button class="neumorph-btn-pill text-white fw-bold text-uppercase">
-            Follow Github
-        </button>
-        <button class="neumorph-btn-round text-white fs-5 ms-auto">
-            <i class="fas fa-share-alt"></i>
-        </button>
+
+        <a href="@Model.GithubUrl" target="_blank" class="neumorph-btn-pill text-white fw-bold text-uppercase text-decoration-none">
+            <i class="fab fa-github me-2"></i> Follow Github
+        </a>
+
+        <div class="ms-auto d-flex gap-3">
+            <button class="neumorph-btn-round text-white fs-5" title="Download CV">
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="neumorph-btn-round text-white fs-5" title="Share Profile">
+                <i class="fas fa-share-alt"></i>
+            </button>
+        </div>
     </div>
 
     <div class="row g-5">
         <div class="col-lg-8">
-            <h3 class="text-white fw-bold mb-4 ps-2 border-start border-4 border-success">Tech Stack (Top Hits)</h3>
+            <h3 class="text-white fw-bold mb-4 ps-2 border-start border-4 border-success">
+                <i class="fas fa-layer-group me-2"></i>Engineering Arsenal
+            </h3>
+
             <div class="d-flex flex-column gap-3">
+                @{
+                    int i = 1;
+                }
+                @foreach (var skill in Model.Skills)
+                {
+                    <div class="glass-card d-flex align-items-center p-3" style="animation-delay: @(i * 0.1)s;">
+                        <div class="text-white-50 ms-2 me-4 fw-bold fs-5">0@(i++)</div>
 
-                <div class="glass-card d-flex align-items-center p-3">
-                    <div class="text-white-50 ms-2 me-4 fw-bold fs-5">01</div>
-                    <div class="me-4 text-white fs-2"><i class="fab fa-microsoft"></i></div>
-                    <div class="flex-grow-1">
-                        <div class="text-white fw-bold fs-5">ASP.NET Core 8.0</div>
-                        <div class="text-white-50 small">Razor Pages & MVC Architecture</div>
+                        <div class="me-4 @skill.Color fs-2" style="width: 40px; text-align: center;">
+                            <i class="@skill.Icon"></i>
+                        </div>
+
+                        <div class="flex-grow-1">
+                            <div class="text-white fw-bold fs-5">@skill.Name</div>
+                            <div class="text-white-50 small">@skill.Description</div>
+                        </div>
+
+                        <span class="clay-badge @skill.BadgeColor ms-3 d-none d-md-block">@skill.Badge</span>
+
+                        <div class="progress ms-3 d-none d-md-block" style="width: 100px; height: 6px; background: #333;">
+                            <div class="progress-bar @skill.BadgeColor" style="width: @skill.Progress%"></div>
+                        </div>
                     </div>
-                    <span class="clay-badge bg-success ms-3">Backend</span>
-                </div>
-
-                <div class="glass-card d-flex align-items-center p-3">
-                    <div class="text-white-50 ms-2 me-4 fw-bold fs-5">02</div>
-                    <div class="me-4 text-info fs-2"><i class="fas fa-database"></i></div>
-                    <div class="flex-grow-1">
-                        <div class="text-white fw-bold">PostgreSQL (Neon)</div>
-                        <div class="text-white-50 small">Serverless Cloud Database</div>
-                    </div>
-                    <span class="clay-badge bg-info ms-3">Data</span>
-                </div>
-
-                <div class="glass-card d-flex align-items-center p-3">
-                    <div class="text-white-50 ms-2 me-4 fw-bold fs-5">03</div>
-                    <div class="me-4 text-warning fs-2"><i class="fab fa-js"></i></div>
-                    <div class="flex-grow-1">
-                        <div class="text-white fw-bold">Audio API Logic</div>
-                        <div class="text-white-50 small">Real-time Visualizer & Controls</div>
-                    </div>
-                    <span class="clay-badge bg-warning text-dark ms-3">Frontend</span>
-                </div>
-
-                <div class="glass-card d-flex align-items-center p-3">
-                    <div class="text-white-50 ms-2 me-4 fw-bold fs-5">04</div>
-                    <div class="me-4 text-danger fs-2"><i class="fas fa-microphone-alt"></i></div>
-                    <div class="flex-grow-1">
-                        <div class="text-white fw-bold">LRC Lyrics Parser</div>
-                        <div class="text-white-50 small">Regex Algorithm for Karaoke</div>
-                    </div>
-                    <span class="clay-badge bg-danger ms-3">Algo</span>
-                </div>
-
+                }
             </div>
         </div>
 
         <div class="col-lg-4">
-            <h3 class="text-white fw-bold mb-4 ps-2 border-start border-4 border-warning">System Status</h3>
-            <div class="cyber-card p-4">
+            <h3 class="text-white fw-bold mb-4 ps-2 border-start border-4 border-warning">System Architecture</h3>
+
+            <div class="cyber-card p-4 h-100">
                 <div class="d-flex align-items-center gap-2 mb-4">
                     <div class="led-indicator"></div>
-                    <span class="text-uppercase fw-bold text-success small" style="letter-spacing:2px;">System Online</span>
+                    <span class="text-uppercase fw-bold text-success small" style="letter-spacing:2px;">Live Production</span>
+                    <span class="ms-auto text-white-50 small font-monospace">VER: 1.0.2</span>
                 </div>
 
-                <p class="text-white fs-5 fw-bold" style="line-height: 1.6;">
-                    "Giao diện Spotify chỉ là lớp vỏ. Bên dưới là cỗ máy .NET Core mạnh mẽ."
+                <div class="mb-4 text-center">
+                    <div style="width: 120px; height: 120px; margin: 0 auto; position: relative;">
+                        <svg viewBox="0 0 36 36" class="circular-chart green">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="position-absolute top-50 start-50 translate-middle text-white fw-bold fs-4">100%</div>
+                    </div>
+                    <div class="text-white-50 small mt-2">Uptime (Render)</div>
+                </div>
+
+                <p class="text-white fs-6 fst-italic text-center" style="line-height: 1.6;">
+                    "Website này không dùng CMS.<br>Nó được code tay 100% bằng C#."
                 </p>
 
-                <p class="text-white-50 small mt-3 border-top border-secondary pt-3">
-                    Dự án tích hợp đầy đủ các công nghệ hiện đại nhất:
-                    <br>• CI/CD tự động qua Render.
-                    <br>• Database trên mây với Neon.
-                    <br>• Giao diện Responsive mọi thiết bị.
-                </p>
-
-                <div class="mt-4">
-                    <a href="#" class="neumorph-btn-pill w-100 d-block text-center text-decoration-none text-white">
-                        <i class="fab fa-github me-2"></i> Access Source Code
-                    </a>
+                <div class="mt-4 pt-3 border-top border-secondary">
+                    <div class="d-flex justify-content-between text-white-50 small mb-2">
+                        <span>Frontend:</span> <span class="text-white">Razor + Neumorphism</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-white-50 small mb-2">
+                        <span>Database:</span> <span class="text-info">Neon (PostgreSQL)</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-white-50 small mb-2">
+                        <span>Real-time:</span> <span class="text-danger">SignalR Hub</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-white-50 small">
+                        <span>Host:</span> <span class="text-warning">Render (Docker)</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Hiệu ứng chạy số Lines of Code
+        const counter = document.getElementById("loc-counter");
+        const target = @Model.LinesOfCode;
+        const duration = 2000;
+        const start = 0;
+        const increment = target / (duration / 16);
+
+        let current = start;
+        const animate = () => {
+            current += increment;
+            if (current < target) {
+                counter.innerText = Math.ceil(current).toLocaleString();
+                requestAnimationFrame(animate);
+            } else {
+                counter.innerText = target.toLocaleString();
+            }
+        };
+        animate();
+    });
+</script>
+
 <style>
-    /* --- 1. AURORA BACKGROUND (Nền Cực Quang) --- */
+    /* --- 1. AURORA BACKGROUND --- */
     .aurora-bg {
-        height: 400px;
+        height: 450px;
         background-color: #050505;
         position: relative;
         overflow: hidden;
@@ -172,25 +210,23 @@
     }
 
     @@keyframes floatBlob {
-        0%
+        0% {
+            transform: translate(0, 0) scale(1);
+        }
 
-    {
-        transform: translate(0, 0) scale(1);
+        100% {
+            transform: translate(30px, 50px) scale(1.1);
+        }
     }
 
-    100% {
-        transform: translate(30px, 50px) scale(1.1);
-    }
-
-    }
-
-    /* --- 2. GLITCH EFFECT (Chữ Nhiễu) --- */
+    /* --- 2. GLITCH EFFECT --- */
     .glitch-title {
         font-size: 5rem;
         font-weight: 900;
         color: white;
         position: relative;
         text-shadow: 2px 2px 0px #1db954;
+        letter-spacing: -2px;
     }
 
         .glitch-title::before, .glitch-title::after {
@@ -216,104 +252,121 @@
             clip-path: inset(54% 0 10% 0);
             animation: glitch-anim 3s infinite linear alternate-reverse;
         }
+
     @@keyframes glitch-anim {
-        0%
+        0% {
+            clip-path: inset(20% 0 80% 0);
+        }
 
-    {
-        clip-path: inset(20% 0 80% 0);
+        20% {
+            clip-path: inset(60% 0 10% 0);
+        }
+
+        40% {
+            clip-path: inset(40% 0 50% 0);
+        }
+
+        60% {
+            clip-path: inset(80% 0 5% 0);
+        }
+
+        80% {
+            clip-path: inset(10% 0 70% 0);
+        }
+
+        100% {
+            clip-path: inset(30% 0 20% 0);
+        }
     }
 
-    20% {
-        clip-path: inset(60% 0 10% 0);
-    }
-
-    40% {
-        clip-path: inset(40% 0 50% 0);
-    }
-
-    60% {
-        clip-path: inset(80% 0 5% 0);
-    }
-
-    80% {
-        clip-path: inset(10% 0 70% 0);
-    }
-
-    100% {
-        clip-path: inset(30% 0 20% 0);
-    }
-
-    }
-
-    /* --- 3. NEUMORPHISM (Nút bấm nổi) --- */
+    /* --- 3. COMPONENTS --- */
     .neumorph-avatar-container {
         width: 232px;
         height: 232px;
         border-radius: 50%;
         padding: 8px;
         background: #121212;
-        box-shadow: 10px 10px 20px #0a0a0a, -10px -10px 20px #1e1e1e;
+        position: relative;
+        box-shadow: 10px 10px 30px rgba(0,0,0,0.5), -10px -10px 30px rgba(255,255,255,0.05);
+    }
+
+    .status-dot {
+        position: absolute;
+        bottom: 25px;
+        right: 25px;
+        width: 24px;
+        height: 24px;
+        background: #1db954;
+        border: 4px solid #121212;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #1db954;
     }
 
     .neumorph-btn-round {
         width: 60px;
         height: 60px;
         border-radius: 50%;
-        background: #121212;
+        background: #181818;
         border: none;
-        box-shadow: 5px 5px 10px #0a0a0a, -5px -5px 10px #1e1e1e;
+        box-shadow: 5px 5px 10px #0a0a0a, -5px -5px 10px #2a2a2a;
         transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-        .neumorph-btn-round:active {
-            box-shadow: inset 5px 5px 10px #0a0a0a, inset -5px -5px 10px #1e1e1e;
+        .neumorph-btn-round:hover {
+            transform: scale(1.05);
             color: #1db954 !important;
+        }
+
+        .neumorph-btn-round:active {
+            box-shadow: inset 5px 5px 10px #0a0a0a, inset -5px -5px 10px #2a2a2a;
         }
 
     .neumorph-btn-pill {
         padding: 12px 30px;
         border-radius: 50px;
-        background: #121212;
+        background: #181818;
         border: none;
-        box-shadow: 5px 5px 10px #0a0a0a, -5px -5px 10px #1e1e1e;
+        box-shadow: 5px 5px 10px #0a0a0a, -5px -5px 10px #2a2a2a;
         transition: 0.2s;
     }
 
-        .neumorph-btn-pill:active {
-            box-shadow: inset 5px 5px 10px #0a0a0a, inset -5px -5px 10px #1e1e1e;
+        .neumorph-btn-pill:hover {
+            transform: translateY(-2px);
+            box-shadow: 8px 8px 15px #0a0a0a, -5px -5px 10px #2a2a2a;
         }
 
-    /* --- 4. GLASSMORPHISM (Thẻ kính mờ) --- */
+        .neumorph-btn-pill:active {
+            transform: translateY(0);
+            box-shadow: inset 5px 5px 10px #0a0a0a, inset -5px -5px 10px #2a2a2a;
+        }
+
     .glass-card {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.03);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 16px;
         transition: 0.3s;
+        animation: slideIn 0.5s ease-out forwards;
+        opacity: 0;
+        transform: translateY(20px);
     }
 
         .glass-card:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(10px);
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(10px) translateY(0) !important;
             border-color: rgba(29, 185, 84, 0.5);
         }
 
-    /* --- 5. CLAYMORPHISM (Huy hiệu đất sét 3D) --- */
-    .clay-badge {
-        padding: 6px 16px;
-        border-radius: 20px;
-        font-weight: bold;
-        color: white;
-        box-shadow: inset 2px 2px 4px rgba(255,255,255,0.3), inset -2px -2px 4px rgba(0,0,0,0.3), 5px 5px 10px rgba(0,0,0,0.5);
-    }
-
-    /* --- EXTRA: CYBER CARD --- */
     .cyber-card {
         background: #0d0d0d;
         border: 1px solid #333;
         position: relative;
         overflow: hidden;
+        border-radius: 12px;
     }
 
         .cyber-card::before {
@@ -322,45 +375,92 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 4px;
+            height: 3px;
             background: linear-gradient(90deg, #ff00c1, #00fff9);
         }
 
+    .clay-badge {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        color: white;
+        box-shadow: inset 2px 2px 4px rgba(255,255,255,0.2), inset -2px -2px 4px rgba(0,0,0,0.2), 5px 5px 10px rgba(0,0,0,0.3);
+    }
+
     .led-indicator {
-        width: 12px;
-        height: 12px;
+        width: 10px;
+        height: 10px;
         background-color: #1db954;
         border-radius: 50%;
         box-shadow: 0 0 10px #1db954;
         animation: blink 2s infinite;
     }
-    @@keyframes blink {
-        50%
 
-    {
-        opacity: 0.5;
+    /* SVG Chart */
+    .circular-chart {
+        display: block;
+        margin: 0 auto;
+        max-width: 80%;
+        max-height: 250px;
     }
 
+    .circle-bg {
+        fill: none;
+        stroke: #222;
+        stroke-width: 3.8;
+    }
+
+    .circle {
+        fill: none;
+        stroke-width: 2.8;
+        stroke-linecap: round;
+        animation: progress 1s ease-out forwards;
+    }
+
+    .circular-chart.green .circle {
+        stroke: #1db954;
+    }
+
+    @@keyframes progress {
+        0% {
+            stroke-dasharray: 0 100;
+        }
+    }
+
+    @@keyframes blink {
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    @@keyframes slideIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     /* Mobile Responsive */
     @@media (max-width: 768px) {
-        .glitch-title
+        .glitch-title {
+            font-size: 2.5rem;
+        }
 
-    {
-        font-size: 2.5rem;
-    }
+        .header-content {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
 
-    .header-content {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
+        .neumorph-avatar-container {
+            width: 160px;
+            height: 160px;
+            margin-bottom: 20px;
+        }
 
-    .neumorph-avatar-container {
-        width: 150px;
-        height: 150px;
-    }
-
+        .aurora-bg {
+            height: auto;
+            padding-top: 80px;
+        }
     }
 </style>
