@@ -1,75 +1,144 @@
 ﻿@page
-@model IndexModel // Tạm dùng model cũ hoặc tạo model rỗng
+@model IndexModel
 @{
-    ViewData["Title"] = "Hồ Sơ Của Tôi";
+    ViewData["Title"] = "Hồ Sơ Kỹ Thuật";
 }
 
-<div class="profile-header" style="background: linear-gradient(transparent, rgba(0,0,0,0.9)), url('https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000&auto=format&fit=crop'); background-size: cover; height: 340px; display: flex; align-items: flex-end; padding: 30px;">
-    <div class="d-flex align-items-end gap-4">
-        <img src="https://via.placeholder.com/200" style="width: 200px; height: 200px; border-radius: 50%; box-shadow: 0 4px 60px rgba(0,0,0,0.5); object-fit: cover;" alt="Avatar">
-        <div>
-            <div class="d-flex align-items-center gap-2 text-white mb-2">
-                <i class="fas fa-check-circle text-primary"></i> <span class="text-uppercase fw-bold small">Verified Developer</span>
+<div class="profile-header position-relative" style="height: 340px; overflow: hidden;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                background: linear-gradient(to bottom, #4c5c68, #121212); z-index: 1;"></div>
+
+    <div class="container-fluid h-100 position-relative d-flex align-items-end px-4 pb-4" style="z-index: 2;">
+        <div class="d-flex align-items-end gap-4">
+            <img src="https://via.placeholder.com/232"
+                 class="shadow-lg rounded-circle"
+                 style="width: 232px; height: 232px; object-fit: cover; border: 4px solid #121212;"
+                 alt="Avatar">
+
+            <div>
+                <div class="d-flex align-items-center gap-2 text-white mb-2">
+                    <span class="bg-primary text-white badge rounded-pill">
+                        <i class="fas fa-check-circle"></i> Verified Dev
+                    </span>
+                    <span class="text-uppercase fw-bold small" style="letter-spacing: 1px;">Project Owner</span>
+                </div>
+
+                <h1 class="text-white fw-bold mb-2 display-1" style="font-weight: 900;">Võ Hưng Yên</h1>
+
+                <p class="text-white opacity-75 fw-bold mb-0">
+                    Full-stack .NET Developer • Cloud Deployment • Audio Processing Specialist
+                </p>
             </div>
-            <h1 class="text-white fw-bold" style="font-size: 5rem; margin-bottom: 10px;">Tên Của Bạn</h1>
-            <p class="text-white opacity-75 fw-bold">
-                1,204,392 dòng code • 5 năm kinh nghiệm • Full-stack .NET Developer
-            </p>
         </div>
     </div>
 </div>
 
-<div class="container-fluid px-4 py-4" style="background: #121212; min-height: 500px;">
-    <div class="mb-4 d-flex align-items-center gap-3">
-        <button class="btn btn-success rounded-pill p-3" style="width: 60px; height: 60px;"><i class="fas fa-play fa-lg text-black"></i></button>
-        <button class="btn btn-outline-light rounded-pill px-4 py-2 fw-bold text-uppercase border-white">Follow (Github)</button>
-        <button class="btn btn-transparent text-white fs-4"><i class="fas fa-ellipsis-h"></i></button>
+<div class="container-fluid px-4 py-4" style="background: linear-gradient(#121212 0%, #000 100%); min-height: 500px;">
+
+    <div class="mb-5 d-flex align-items-center gap-3">
+        <button class="btn btn-success rounded-circle d-flex align-items-center justify-content-center hover-scale"
+                style="width: 56px; height: 56px;">
+            <i class="fas fa-play fa-lg text-black"></i>
+        </button>
+        <button class="btn btn-outline-light rounded-pill px-4 py-2 fw-bold text-uppercase border-white hover-scale">
+            Follow (Github)
+        </button>
+        <button class="btn btn-transparent text-white fs-4 ms-2">
+            <i class="fas fa-ellipsis-h"></i>
+        </button>
     </div>
 
-    <div class="row">
-        <div class="col-md-8">
-            <h3 class="text-white fw-bold mb-3">Top Skills (Tech Stack)</h3>
-            <div class="d-flex flex-column gap-2">
-                <div class="d-flex align-items-center p-2 rounded hover-bg" style="transition:0.2s;">
-                    <span class="text-white-50 me-3">1</span>
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/4f/Csharp_Logo.png" width="40" class="me-3">
+    <div class="row g-5">
+        <div class="col-lg-8">
+            <h3 class="text-white fw-bold mb-3">Project Tech Stack</h3>
+            <div class="d-flex flex-column">
+
+                <div class="d-flex align-items-center p-2 rounded hover-row group-item">
+                    <div class="text-white-50 ms-2 me-3 fw-bold">1</div>
+                    <div class="me-3 text-white fs-4"><i class="fab fa-microsoft"></i></div>
                     <div class="flex-grow-1">
-                        <div class="text-white fw-bold">C# / .NET Core</div>
-                        <div class="text-white-50 small">Backend Development</div>
+                        <div class="text-white fw-bold">ASP.NET Core 8.0 (Razor Pages)</div>
+                        <div class="text-white-50 small">Backend Framework & MVC Pattern</div>
                     </div>
-                    <span class="text-white-50">Expert</span>
+                    <div class="text-white-50 small d-none d-md-block">Core Logic</div>
+                    <div class="text-white-50 ms-4">Senior</div>
                 </div>
-                <div class="d-flex align-items-center p-2 rounded hover-bg">
-                    <span class="text-white-50 me-3">2</span>
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg" width="40" class="me-3">
+
+                <div class="d-flex align-items-center p-2 rounded hover-row group-item">
+                    <div class="text-white-50 ms-2 me-3 fw-bold">2</div>
+                    <div class="me-3 text-success fs-4"><i class="fas fa-database"></i></div>
                     <div class="flex-grow-1">
-                        <div class="text-white fw-bold">ReactJS / Javascript</div>
-                        <div class="text-white-50 small">Frontend Interface</div>
+                        <div class="text-white fw-bold">PostgreSQL (Neon Tech)</div>
+                        <div class="text-white-50 small">Serverless Database Cloud</div>
                     </div>
-                    <span class="text-white-50">Advanced</span>
+                    <div class="text-white-50 small d-none d-md-block">Data Storage</div>
+                    <div class="text-white-50 ms-4">Cloud</div>
                 </div>
-                <div class="d-flex align-items-center p-2 rounded hover-bg">
-                    <span class="text-white-50 me-3">3</span>
-                    <img src="https://www.svgrepo.com/show/331760/sql-database-generic.svg" width="40" class="me-3">
+
+                <div class="d-flex align-items-center p-2 rounded hover-row group-item">
+                    <div class="text-white-50 ms-2 me-3 fw-bold">3</div>
+                    <div class="me-3 text-info fs-4"><i class="fas fa-cloud-upload-alt"></i></div>
                     <div class="flex-grow-1">
-                        <div class="text-white fw-bold">SQL Server / PostgreSQL</div>
-                        <div class="text-white-50 small">Database Management</div>
+                        <div class="text-white fw-bold">Render Cloud Hosting</div>
+                        <div class="text-white-50 small">CI/CD Pipeline & Web Service</div>
                     </div>
-                    <span class="text-white-50">Advanced</span>
+                    <div class="text-white-50 small d-none d-md-block">DevOps</div>
+                    <div class="text-white-50 ms-4">Live</div>
                 </div>
+
+                <div class="d-flex align-items-center p-2 rounded hover-row group-item">
+                    <div class="text-white-50 ms-2 me-3 fw-bold">4</div>
+                    <div class="me-3 text-warning fs-4"><i class="fab fa-js"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="text-white fw-bold">Advanced Audio API & AJAX</div>
+                        <div class="text-white-50 small">Music Player Logic & No-Reload Actions</div>
+                    </div>
+                    <div class="text-white-50 small d-none d-md-block">Frontend</div>
+                    <div class="text-white-50 ms-4">Interactive</div>
+                </div>
+
+                <div class="d-flex align-items-center p-2 rounded hover-row group-item">
+                    <div class="text-white-50 ms-2 me-3 fw-bold">5</div>
+                    <div class="me-3 text-danger fs-4"><i class="fas fa-file-audio"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="text-white fw-bold">LRC Lyrics Sync Algorithm</div>
+                        <div class="text-white-50 small">Custom Regex Parser for Karaoke Effect</div>
+                    </div>
+                    <div class="text-white-50 small d-none d-md-block">Algorithm</div>
+                    <div class="text-white-50 ms-4">Unique</div>
+                </div>
+
             </div>
         </div>
 
-        <div class="col-md-4">
-            <h3 class="text-white fw-bold mb-3">About</h3>
-            <div class="position-relative rounded overflow-hidden" style="height: 400px; background: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085') center/cover;">
-                <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: rgba(0,0,0,0.7);">
-                    <p class="text-white mb-2 fw-bold">1,432 Monthly Commits</p>
-                    <p class="text-white-50 small mb-3">
-                        Xin chào, mình là [Tên]. Mình là một lập trình viên đam mê xây dựng các ứng dụng web hiệu năng cao. Web này chính là một ví dụ về khả năng của mình!
+        <div class="col-lg-4">
+            <h3 class="text-white fw-bold mb-3">About This Portfolio</h3>
+            <div class="bg-dark rounded p-4 position-relative overflow-hidden" style="min-height: 400px;">
+                <div style="position: absolute; top:0; left:0; width:100%; height:100%;
+                            background: url('https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=1000&auto=format&fit=crop') center/cover;
+                            opacity: 0.3;"></div>
+
+                <div class="position-relative" style="z-index: 2;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="bg-success rounded-circle" style="width: 10px; height: 10px;"></div>
+                        <span class="text-uppercase fw-bold text-white small">Live on Render</span>
+                    </div>
+
+                    <p class="text-white fs-5 fw-bold">
+                        "Không chỉ là một trang web nghe nhạc, đây là minh chứng cho kỹ năng Full-stack .NET."
                     </p>
-                    <a href="#" class="text-white text-uppercase fw-bold text-decoration-none" style="letter-spacing:1px;">Facebook</a> •
-                    <a href="#" class="text-white text-uppercase fw-bold text-decoration-none" style="letter-spacing:1px;">LinkedIn</a>
+
+                    <p class="text-white-50 small mt-3">
+                        Dự án này được xây dựng từ con số 0 (Scratch) sử dụng mô hình MVC/Razor Pages.
+                        Dữ liệu được lưu trữ an toàn trên Neon (PostgreSQL) và triển khai tự động qua Render.
+                        Tính năng nổi bật nhất là xử lý file LRC để tạo hiệu ứng Karaoke Real-time.
+                    </p>
+
+                    <div class="mt-4 pt-4 border-top border-secondary">
+                        <a href="https://github.com/TênGithubCuaBan" target="_blank" class="text-white text-decoration-none fw-bold hover-underline">
+                            <i class="fab fa-github me-2"></i> View Source Code
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -77,7 +146,28 @@
 </div>
 
 <style>
-    .hover-bg:hover {
-        background-color: rgba(255,255,255,0.1);
+    /* CSS Riêng cho trang Profile */
+    .hover-row:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        cursor: default;
     }
+
+    .hover-scale:hover {
+        transform: scale(1.05);
+        transition: 0.2s;
+    }
+
+    .hover-underline:hover {
+        text-decoration: underline !important;
+    }
+
+    /* Ẩn hiện số thứ tự khi hover (Giống Spotify) */
+    .group-item .fa-play {
+        display: none;
+    }
+
+    .group-item:hover .text-white-50.fw-bold {
+        display: none;
+    }
+    /* (Có thể mở rộng thêm hiệu ứng play icon nếu muốn) */
 </style>
