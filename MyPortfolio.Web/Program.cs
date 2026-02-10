@@ -76,5 +76,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
 app.MapHub<MusicHub>("/musicHub");
-
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<MyPortfolio.Infrastructure.Data.ApplicationDbContext>();
+        // Lệnh này tương đương với Update-Database:
+        context.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Lỗi khi khởi tạo Database.");
+    }
+}
 app.Run();
