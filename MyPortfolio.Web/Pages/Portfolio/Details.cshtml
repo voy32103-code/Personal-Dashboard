@@ -268,48 +268,45 @@
 </div>
 @section Scripts {
     <script>
-        // --- 1. TỰ ĐỘNG PHÁT NHẠC KHI VÀO TRANG ---
+        // --- 1. TỰ ĐỘNG PHÁT BÀI NÀY KHI VÀO TRANG ---
         $(document).ready(function() {
             var audioUrl = '@Model.PortfolioItem.AudioUrl';
-            // Chỉ phát nếu có link nhạc
             if (audioUrl && audioUrl.length > 0) {
+                // Gọi hàm playMusic đã có sẵn ở _Layout
                 playMusic(
-                    '@Model.PortfolioItem.AudioUrl',       // Link nhạc
-                    '@Model.PortfolioItem.Title',          // Tên bài
-                    '@Model.PortfolioItem.ImageUrl',       // Ảnh bìa
-                    '@Model.PortfolioItem.Artist'          // Ca sĩ
+                    '@Model.PortfolioItem.AudioUrl',
+                    '@Model.PortfolioItem.Title',
+                    '@Model.PortfolioItem.ImageUrl',
+                    '', // Description (không cần thiết ở đây)
+                    '@Model.PortfolioItem.Artist'
                 );
             }
         });
 
-        // --- 2. HÀM PHÁT NHẠC (Nút Play to) ---
+        // Nút Play to ở trang Details
         function playCurrentSong() {
             playMusic(
                 '@Model.PortfolioItem.AudioUrl',
                 '@Model.PortfolioItem.Title',
                 '@Model.PortfolioItem.ImageUrl',
+                '',
                 '@Model.PortfolioItem.Artist'
             );
         }
 
-        // --- 3. XỬ LYRICS SYNC ---
+        // --- 2. XỬ LÝ LYRICS ---
         const rawLyrics = document.getElementById('raw-lyrics').value;
         const lyricsContainer = document.getElementById('lyrics-display');
         let lyricsData = [];
 
-        // Hàm parse LRC
         function parseLyrics(lrc) {
             const lines = lrc.split('\n');
             const result = [];
             lines.forEach(line => {
                 const match = line.match(/^\[(\d{2}):(\d{2})\.(\d{2})\](.*)/);
                 if (match) {
-                    const minutes = parseInt(match[1]);
-                    const seconds = parseInt(match[2]);
-                    const millis = parseInt(match[3]);
-                    const time = minutes * 60 + seconds + millis / 100;
-                    const text = match[4].trim();
-                    if(text) result.push({ time, text });
+                    const time = parseInt(match[1]) * 60 + parseInt(match[2]) + parseInt(match[3]) / 100;
+                    result.push({ time, text: match[4].trim() });
                 }
             });
             return result;
@@ -323,50 +320,46 @@
                     `<div class="lyrics-line" id="line-${index}" onclick="seekTo(${line.time})">${line.text}</div>`
                 ).join('');
             } else {
-                lyricsContainer.innerHTML = `<div class="text-gray" style="white-space: pre-line; line-height: 1.8;">${rawLyrics}</div>`;
+                lyricsContainer.innerHTML = `<div class="text-gray" style="white-space: pre-line;">${rawLyrics}</div>`;
             }
         } else {
-            lyricsContainer.innerHTML = '<div class="text-muted fst-italic">Chưa có lời bài hát cho dự án này.</div>';
+            lyricsContainer.innerHTML = '<div class="text-muted fst-italic">Chưa có lời bài hát.</div>';
         }
 
-        // --- 4. ĐỒNG BỘ LYRICS KHI NHẠC CHẠY ---
+        // --- 3. SYNC LYRICS (Nghe sự kiện từ _Layout) ---
         window.addEventListener('audioTimeUpdate', function(e) {
             const currentTime = e.detail.currentTime;
-
-            // Tìm dòng đang hát
             let activeIndex = -1;
+
             for (let i = 0; i < lyricsData.length; i++) {
-                if (currentTime >= lyricsData[i].time) {
-                    activeIndex = i;
-                } else {
-                    break;
-                }
+                if (currentTime >= lyricsData[i].time) activeIndex = i;
+                else break;
             }
 
-            // Highlight dòng đó
             if (activeIndex !== -1) {
                 document.querySelectorAll('.lyrics-line').forEach(el => el.classList.remove('active'));
-                const activeLine = document.getElementById(`line-${activeIndex}`);
-                if (activeLine) {
-                    activeLine.classList.add('active');
-                    activeLine.scrollIntoView({ behavior: "smooth", block: "center" });
+                const line = document.getElementById(`line-${activeIndex}`);
+                if (line) {
+                    line.classList.add('active');
+                    line.scrollIntoView({ behavior: "smooth", block: "center" });
                 }
             }
         });
 
-        // --- 5. TUA NHẠC KHI BẤM VÀO LỜI ---
+        // --- 4. TUA KHI BẤM VÀO LỜI ---
         function seekTo(time) {
-            const audio = document.getElementById('audio-player');
+            var audio = document.getElementById('audio-player'); // Lấy audio từ Layout
             if(audio) {
                 audio.currentTime = time;
                 audio.play();
-                // Đổi icon Play thành Pause
-                const playIcon = document.getElementById('play-icon');
-                if(playIcon) {
-                    playIcon.classList.remove('fa-play');
-                    playIcon.classList.add('fa-pause');
+                // Cập nhật icon play ở Layout
+                var layoutPlayIcon = document.getElementById('play-icon');
+                if(layoutPlayIcon) {
+                    layoutPlayIcon.classList.remove('fa-play');
+                    layoutPlayIcon.classList.add('fa-pause');
                 }
             }
         }
     </script>
+}
 }

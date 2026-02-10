@@ -1,8 +1,18 @@
 ﻿@page
-@using MyPortfolio.Web.Pages
 @model IndexModel
+@using System.Text.Json
+@using MyPortfolio.Web.Pages
 @{
     // Title được set trong Backend (Index.cshtml.cs)
+
+    // --- 1. TỐI ƯU HÓA: Tạo Playlist JSON 1 lần duy nhất ở đây ---
+    var allSongsJson = JsonSerializer.Serialize(Model.Projects.Select(p => new
+    {
+        audioUrl = p.AudioUrl,
+        title = p.Title,
+        imageUrl = p.ImageUrl,
+        artist = p.Artist
+    }));
 }
 
 <div class="d-flex flex-column mb-4 ps-3 pe-3 pt-3">
@@ -36,43 +46,48 @@
         @foreach (var item in Model.Projects)
         {
             <div class="spotify-card position-relative" style="cursor: pointer;"
-                 onclick="window.location.href='/Portfolio/Details/@item.Id'">
+                 onclick='playMusic(
+                     "@item.AudioUrl",
+                     "@item.Title",
+                     "@item.ImageUrl",
+                     "@item.Description",
+                     "@item.Artist",
+                     @Html.Raw(allSongsJson)
+                 )'>
 
                 <div style="position: relative;">
-                    <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/150" : item.ImageUrl)"
-                         class="card-img" alt="@item.Title" />
+                    <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/150" : item.ImageUrl)" class="card-img" />
                 </div>
 
-                <div class="card-title text-white">@item.Title</div>
+                <div class="card-title text-white">
+                    <a href="/Portfolio/Details/@item.Id" class="text-white text-decoration-none stop-prop hover-underline">
+                        @item.Title
+                    </a>
+                </div>
+
                 <div class="card-desc">@item.Description</div>
 
-                <form method="post" asp-page-handler="ToggleHeart" asp-route-id="@item.Id"
-                      class="position-absolute top-0 end-0 m-2 stop-prop">
-                    <input type="hidden" name="SearchString" value="@Model.SearchString" />
-                    <input type="hidden" name="Mode" value="@Model.Mode" />
-                    <button type="button"
-                            class="btn btn-sm btn-transparent border-0 p-0 position-absolute top-0 end-0 m-2 stop-prop"
-                            onclick="toggleHeart(event, @item.Id, this)">
-
-                        @if (item.IsFavorite)
-                        {
-                            <i class="fas fa-heart fa-lg text-spotify heart-anim"></i>
-                        }
-                        else
-                        {
-                            <i class="far fa-heart fa-lg text-white-50 hover-bright"></i>
-                        }
-                    </button>
-                </form>
+                <button type="button"
+                        class="btn btn-sm btn-transparent border-0 p-0 position-absolute top-0 end-0 m-2 stop-prop"
+                        onclick="toggleHeart(event, @item.Id, this)">
+                    @if (item.IsFavorite)
+                    {
+                        <i class="fas fa-heart fa-lg text-spotify heart-anim"></i>
+                    }
+                    else
+                    {
+                        <i class="far fa-heart fa-lg text-white-50 hover-bright"></i>
+                    }
+                </button>
 
                 @if (User.Identity != null && User.Identity.IsAuthenticated)
                 {
                     <div class="mt-3 d-flex justify-content-between align-items-center stop-prop">
                         <a asp-page="./Portfolio/Edit" asp-route-id="@item.Id" class="text-muted small hover-white text-decoration-none">
-                            <i class="fas fa-pen"></i> Sửa
+                            <i class="fas fa-pen"></i>
                         </a>
                         <a asp-page="./Portfolio/Delete" asp-route-id="@item.Id" class="text-muted small hover-white text-decoration-none">
-                            <i class="fas fa-trash"></i> Xóa
+                            <i class="fas fa-trash"></i>
                         </a>
                     </div>
                 }
@@ -95,7 +110,6 @@
 </div>
 
 <style>
-    /* Màu xanh Spotify */
     .text-spotify {
         color: #1db954 !important;
     }
@@ -104,7 +118,6 @@
         background: transparent;
     }
 
-    /* Animation Tim */
     .heart-anim {
         animation: heart-beat 0.3s ease-in-out;
     }
@@ -134,32 +147,34 @@
         text-decoration: underline !important;
     }
 
+    .hover-underline:hover {
+        text-decoration: underline !important;
+    }
+
     .spotify-card:hover {
         transform: scale(1.02);
         background-color: #282828;
     }
 </style>
 
-@Html.AntiForgeryToken() <script>
-    // Chặn sự kiện click nổi bọt (để bấm Tim/Sửa/Xóa không bị chuyển trang)
+@Html.AntiForgeryToken()
+<script>
+    // Ngăn chặn sự kiện click lan ra thẻ cha (dùng cho Link tiêu đề, nút Tim, nút Sửa/Xóa)
     document.querySelectorAll('.stop-prop').forEach(el => {
         el.addEventListener('click', e => {
             e.stopPropagation();
+            // Lưu ý: Không dùng e.preventDefault() ở đây để thẻ <a> vẫn chuyển trang được
         });
     });
-    // Hàm xử lý thả tim không reload
+
+    // Logic thả tim AJAX (Không reload trang)
     function toggleHeart(e, id, btnElement) {
-        // 1. Chặn sự kiện click lan ra ngoài (để không bị nhảy vào trang chi tiết)
-        e.stopPropagation();
-        e.preventDefault();
+        e.stopPropagation(); // Ngăn phát nhạc
+        e.preventDefault();  // Ngăn hành vi mặc định
 
-        // 2. Lấy icon bên trong nút bấm
         var icon = btnElement.querySelector('i');
-
-        // 3. Lấy mã bảo mật AntiForgeryToken (ASP.NET bắt buộc cái này)
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-        // 4. Gửi yêu cầu lên Server (AJAX Fetch)
         fetch(`?handler=ToggleHeart&id=${id}`, {
             method: 'POST',
             headers: {
@@ -170,16 +185,13 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // 5. Cập nhật giao diện dựa trên kết quả trả về
                 if (data.isFavorite) {
-                    // Chuyển sang tim đặc, màu xanh, có hiệu ứng nảy
                     icon.className = "fas fa-heart fa-lg text-spotify heart-anim";
                 } else {
-                    // Chuyển sang tim rỗng, màu trắng mờ
                     icon.className = "far fa-heart fa-lg text-white-50 hover-bright";
                 }
             } else {
-                alert("Có lỗi xảy ra, vui lòng thử lại!");
+                alert("Lỗi kết nối!");
             }
         })
         .catch(error => console.error('Error:', error));
