@@ -70,5 +70,15 @@ namespace MyPortfolio.Web.Pages
 
             return new JsonResult(new { success = false });
         }
+        public async Task<IActionResult> OnPostCountPlayAsync(int id)
+        {
+            var item = await _context.PortfolioItems.FindAsync(id);
+            if (item != null)
+            {
+                item.PlayCount++;
+                await _context.SaveChangesAsync();
+            }
+            return new JsonResult(new { success = true });
+        }
     }
 }

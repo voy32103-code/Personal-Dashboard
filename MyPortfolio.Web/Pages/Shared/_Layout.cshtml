@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="manifest" href="~/manifest.json">
+    <meta name="theme-color" content="#1db954">
 </head>
 <body>
     <div class="aurora-bg-container">
@@ -40,7 +42,9 @@
                 <a href="/?Mode=library" class="nav-btn @(Context.Request.Query["Mode"] == "library" ? "active" : "")">
                     <i class="fas fa-heart text-danger"></i> Liked Songs
                 </a>
-
+                <a href="/Admin/Dashboard" class="neumorph-btn btn-sm rounded-pill text-decoration-none py-2 mb-2 w-100 text-warning">
+                    <i class="fas fa-chart-line me-2"></i> Dashboard
+                </a>
                 @if (User.Identity.IsAuthenticated)
                 {
                     <div class="mt-4 p-3 glass-panel text-center">
@@ -103,6 +107,9 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
     <script>
         // --- 1. KHỞI TẠO BIẾN ---
         var audio = document.getElementById("audio-player");
@@ -121,9 +128,41 @@
         var currentIndex = -1;
         var lastVolume = 1;
 
+        // ==========================================
+        // 🔥 SIGNALR SETUP (TÍNH NĂNG NGHE CHUNG)
+        // ==========================================
+        var connection = new signalR.HubConnectionBuilder().withUrl("/musicHub").build();
+
+        // 1. Nhận lệnh từ người khác (Server -> Client)
+        connection.on("ReceiveMusicAction", function (action, url, time) {
+            console.log("Nhận lệnh: " + action);
+            if (action === "play") {
+                if (audio.src !== url) { // Nếu khác bài thì đổi bài
+                    audio.src = url;
+                    // Cần cập nhật lại UI tên bài hát nếu có thể (Ở mức đơn giản thì chỉ cần nhạc chạy đúng)
+                }
+                if (Math.abs(audio.currentTime - time) > 1) { // Đồng bộ thời gian nếu lệch > 1s
+                    audio.currentTime = time;
+                }
+                audio.play();
+                updatePlayIcon(true);
+            } else if (action === "pause") {
+                audio.pause();
+                updatePlayIcon(false);
+            }
+        });
+
+        // 2. Bắt đầu kết nối
+        connection.start().then(function () {
+            console.log("Đã kết nối vào phòng nhạc!");
+        }).catch(function (err) {
+            return console.error(err.toString());
+        });
+        // ==========================================
+
+
         // --- 2. HÀM PHÁT NHẠC & XỬ LÝ PLAYLIST ---
         function playMusic(url, title, img, desc, artist, listData) {
-            // Nếu có danh sách bài hát truyền vào (từ trang Index)
             if (listData) {
                 playlist = listData.map(item => ({
                     audioUrl: item.audioUrl || item.AudioUrl,
@@ -131,38 +170,33 @@
                     imageUrl: item.imageUrl || item.ImageUrl,
                     artist: item.artist || item.Artist
                 }));
-            }
-            // Nếu playlist đang trống (phát lẻ từ trang Details)
-            else if (playlist.length === 0) {
+            } else if (playlist.length === 0) {
                 playlist = [{ audioUrl: url, title: title, imageUrl: img, artist: artist }];
             }
 
-            // Tìm vị trí bài hát trong danh sách
             var foundIndex = playlist.findIndex(p => p.audioUrl === url);
-
             if (foundIndex !== -1) {
                 currentIndex = foundIndex;
             } else {
-                // Nếu bài này chưa có trong list, thêm vào đầu
                 playlist.unshift({ audioUrl: url, title: title, imageUrl: img, artist: artist });
                 currentIndex = 0;
             }
-
             loadSong(playlist[currentIndex]);
+
+            // 🔥 Gửi lệnh Play ngay khi chọn bài
+            if (connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke("SendMusicAction", "play", url, 0);
+            }
         }
 
-        // Hàm nội bộ: Load giao diện và Audio
         function loadSong(song) {
             if (!song || !song.audioUrl) return;
-
-            // Cập nhật giao diện
             document.getElementById("current-title").innerText = song.title;
             document.getElementById("current-desc").innerText = song.artist || "Unknown";
             document.getElementById("current-img").src = song.imageUrl;
             document.getElementById("current-img").style.display = "block";
             document.getElementById("song-info").style.display = "block";
 
-            // Chỉ nạp lại src nếu khác bài cũ (để tránh lag)
             if (audio.src !== song.audioUrl) {
                 audio.src = song.audioUrl;
                 audio.play();
@@ -175,15 +209,24 @@
             }
         }
 
-        // --- 3. CÁC NÚT ĐIỀU KHIỂN ---
+        // --- 3. CÁC NÚT ĐIỀU KHIỂN (CÓ SIGNALR) ---
         function togglePlay() {
             if (!audio.src) return;
+
             if (audio.paused) {
                 audio.play();
                 updatePlayIcon(true);
+                // 🔥 Gửi lệnh PLAY cho mọi người
+                if (connection.state === signalR.HubConnectionState.Connected) {
+                    connection.invoke("SendMusicAction", "play", audio.src, audio.currentTime);
+                }
             } else {
                 audio.pause();
                 updatePlayIcon(false);
+                // 🔥 Gửi lệnh PAUSE cho mọi người
+                if (connection.state === signalR.HubConnectionState.Connected) {
+                    connection.invoke("SendMusicAction", "pause", audio.src, audio.currentTime);
+                }
             }
         }
 
@@ -199,7 +242,6 @@
 
         function nextSong() {
             if (playlist.length === 0) return;
-
             if (isShuffle) {
                 var newIndex;
                 do { newIndex = Math.floor(Math.random() * playlist.length); }
@@ -210,14 +252,16 @@
                 if (currentIndex >= playlist.length) currentIndex = 0;
             }
             loadSong(playlist[currentIndex]);
+
+            // 🔥 Đồng bộ khi chuyển bài
+            if (connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke("SendMusicAction", "play", playlist[currentIndex].audioUrl, 0);
+            }
         }
 
         function prevSong() {
             if (playlist.length === 0) return;
-
-            // Nếu nghe được hơn 3 giây thì tua lại đầu
             if (audio.currentTime > 3) { audio.currentTime = 0; return; }
-
             if (isShuffle) {
                 var newIndex;
                 do { newIndex = Math.floor(Math.random() * playlist.length); }
@@ -228,6 +272,11 @@
                 if (currentIndex < 0) currentIndex = playlist.length - 1;
             }
             loadSong(playlist[currentIndex]);
+
+            // 🔥 Đồng bộ khi chuyển bài
+            if (connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke("SendMusicAction", "play", playlist[currentIndex].audioUrl, 0);
+            }
         }
 
         function toggleShuffle() {
@@ -240,13 +289,12 @@
             repeatBtn.style.color = isRepeat ? "#1db954" : "#b3b3b3";
         }
 
-        // --- 4. SỰ KIỆN AUDIO & THANH TIẾN ĐỘ ---
+        // --- 4. SỰ KIỆN AUDIO ---
         audio.addEventListener("timeupdate", function() {
             if (audio.duration) {
                 var percent = (audio.currentTime / audio.duration) * 100;
                 progressBar.style.width = percent + "%";
                 currentTimeLabel.innerText = formatTime(audio.currentTime);
-                // Gửi sự kiện để trang Lyrics bắt được
                 window.dispatchEvent(new CustomEvent('audioTimeUpdate', { detail: { currentTime: audio.currentTime } }));
             }
         });
@@ -255,7 +303,6 @@
             durationTimeLabel.innerText = formatTime(audio.duration);
         });
 
-        // Tự động qua bài khi hết nhạc
         audio.addEventListener("ended", function() {
             if (isRepeat) {
                 audio.currentTime = 0;
@@ -265,12 +312,17 @@
             }
         });
 
-        // Click tua nhạc
         document.querySelector(".progress-bar-wrapper").addEventListener("click", function(e) {
              if (audio.duration) {
                 var rect = this.getBoundingClientRect();
                 var percent = (e.clientX - rect.left) / rect.width;
-                audio.currentTime = percent * audio.duration;
+                var newTime = percent * audio.duration;
+                audio.currentTime = newTime;
+
+                // 🔥 Khi tua nhạc cũng đồng bộ
+                if (connection.state === signalR.HubConnectionState.Connected) {
+                    connection.invoke("SendMusicAction", "play", audio.src, newTime);
+                }
             }
         });
 
@@ -278,8 +330,6 @@
         function setVolume(val) {
             audio.volume = val;
             updateVolumeIcon(val);
-            // Đổi màu nền thanh volume khi kéo
-            // (Note: Cần CSS hỗ trợ để thấy background gradient)
         }
 
         function toggleMute() {
@@ -302,7 +352,6 @@
 
         volumeSlider.oninput = function() { setVolume(this.value); };
 
-        // Helper Format thời gian
         function formatTime(s) {
             if (isNaN(s)) return "0:00";
             var m = Math.floor(s / 60);
@@ -310,9 +359,9 @@
             return m + ":" + (sec < 10 ? "0" : "") + sec;
         }
 
-        // Khởi tạo âm lượng
         setVolume(1);
     </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

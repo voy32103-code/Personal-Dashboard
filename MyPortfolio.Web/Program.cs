@@ -1,21 +1,26 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyPortfolio.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
+using MyPortfolio.Web.Hubs;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ==========================================
-// KHU VỰC ĐĂNG KÝ DỊCH VỤ (Làm việc ở đây)
+// 1. KHU VỰC ĐĂNG KÝ DỊCH VỤ (Services)
+// (Tất cả code builder.Services... phải nằm ở đây)
 // ==========================================
 
-// 1. Đăng ký Database (PostgreSQL)
+// 1.1. Đăng ký Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         b => b.MigrationsAssembly("MyPortfolio.Infrastructure")));
 
-// 2. Đăng ký Identity (Quản lý User)
-builder.Services.AddDefaultIdentity<Microsoft.AspNetCore.Identity.IdentityUser>(options =>
+// 1.2. Đăng ký Identity (Quản lý User)
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
-    // Cấu hình password cho dễ chịu (bỏ yêu cầu ký tự đặc biệt)
     options.Password.RequireDigit = false;
     options.Password.RequireLowercase = false;
     options.Password.RequireNonAlphanumeric = false;
@@ -23,24 +28,41 @@ builder.Services.AddDefaultIdentity<Microsoft.AspNetCore.Identity.IdentityUser>(
     options.Password.RequiredLength = 6;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>();
+
+// 1.3. Cấu hình Cookie & Upload
 builder.Services.ConfigureApplicationCookie(options => {
     options.LoginPath = "/Login";
 });
+
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
 {
-    // Cho phép upload file lên tới 100MB (số tính bằng bytes)
-    options.MultipartBodyLengthLimit = 100 * 1024 * 1024;
+    options.MultipartBodyLengthLimit = 100 * 1024 * 1024; // 100MB
 });
 
-// 2. Đăng ký Razor Pages
+// 1.4. Đăng ký SignalR & Razor Pages
+builder.Services.AddSignalR();
 builder.Services.AddRazorPages();
 
+// 1.5. Đăng ký Google Authentication (ĐÃ CHUYỂN LÊN ĐÂY)
+builder.Services.AddAuthentication()
+    .AddGoogle(options =>
+    {
+        IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
+        options.ClientId = googleAuthNSection["ClientId"];
+        options.ClientSecret = googleAuthNSection["ClientSecret"];
+    });
+
+// ==========================================
+// 2. BUILD ỨNG DỤNG (Chốt sổ Services)
 // ==========================================
 var app = builder.Build();
+
+
+// ==========================================
+// 3. KHU VỰC PIPELINE (Middleware)
+// (Thứ tự các dòng lệnh ở đây RẤT QUAN TRỌNG)
 // ==========================================
 
-
-// KHU VỰC CẤU HÌNH PIPELINE (HTTPS, Routing...)
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -52,8 +74,11 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication(); // 1. Kiểm tra "Bạn là ai?"
+// --- QUAN TRỌNG: Phải có đủ cặp đôi này ---
+app.UseAuthentication(); // 1. Kiểm tra "Bạn là ai?" (Mới thêm vào)
 app.UseAuthorization();  // 2. Kiểm tra "Bạn có quyền không?"
+
 app.MapRazorPages();
+app.MapHub<MusicHub>("/musicHub");
 
 app.Run();

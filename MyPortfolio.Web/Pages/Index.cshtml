@@ -79,6 +79,7 @@
                         </div>
                     }
                 </div>
+                <div id="playlist-container" class="row ..."> </div>
             </div>
         }
     </div>
@@ -91,6 +92,16 @@
         el.addEventListener('click', e => {
             e.stopPropagation();
         });
+    });
+    var el = document.getElementById('playlist-container');
+    var sortable = Sortable.create(el, {
+        animation: 150,
+        ghostClass: 'bg-secondary', // Class khi đang kéo
+        onEnd: function (evt) {
+            // Gửi thứ tự mới lên Server (evt.newIndex)
+            console.log("Đã đổi vị trí từ " + evt.oldIndex + " sang " + evt.newIndex);
+            // Gọi API update OrderIndex tại đây
+        }
     });
 
     // AJAX Thả tim

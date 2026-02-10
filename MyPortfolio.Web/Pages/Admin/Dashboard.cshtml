@@ -1,0 +1,98 @@
+﻿@page
+@model MyPortfolio.Web.Pages.Admin.DashboardModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="container-fluid px-4 py-5">
+    <h2 class="glitch-text mb-5" data-text="ANALYTICS CENTER">ANALYTICS CENTER</h2>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="glass-panel p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h3 class="text-white fw-bold display-4 mb-0">@Model.TotalSongs</h3>
+                    <p class="text-white-50 small text-uppercase fw-bold mb-0">Total Projects</p>
+                </div>
+                <div class="text-success display-4">
+                    <i class="fas fa-music"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="glass-panel p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h3 class="text-white fw-bold display-4 mb-0">@Model.TotalPlays</h3>
+                    <p class="text-white-50 small text-uppercase fw-bold mb-0">Total Plays</p>
+                </div>
+                <div class="text-warning display-4">
+                    <i class="fas fa-headphones"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-panel p-4">
+        <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2">Top Trending Songs</h4>
+        <div style="height: 400px;">
+            <canvas id="playsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Lấy dữ liệu từ C# Backend truyền sang
+    const titles = @Html.Raw(JsonSerializer.Serialize(Model.SongTitles));
+    const counts = @Html.Raw(JsonSerializer.Serialize(Model.PlayCounts));
+
+    const ctx = document.getElementById('playsChart').getContext('2d');
+
+    // Cấu hình Gradient màu cho đẹp (Tím -> Xanh)
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(188, 19, 254, 0.8)'); // Tím
+    gradient.addColorStop(1, 'rgba(29, 185, 84, 0.2)');  // Xanh lá nhạt
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: titles,
+            datasets: [{
+                label: 'Lượt nghe',
+                data: counts,
+                backgroundColor: gradient,
+                borderColor: '#bc13fe',
+                borderWidth: 1,
+                borderRadius: 5,
+                barPercentage: 0.6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }, // Ẩn chú thích cho gọn
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    padding: 10,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.1)' }, // Lưới mờ
+                    ticks: { color: '#b3b3b3' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#fff', font: { weight: 'bold' } }
+                }
+            }
+        }
+    });
+</script>

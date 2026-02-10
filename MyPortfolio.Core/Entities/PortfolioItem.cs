@@ -12,5 +12,6 @@
         public string? Artist { get; set; } // Tên ca sĩ
         public string? Lyrics { get; set; } // Lời bài hát
         public bool IsFavorite { get; set; } = false;
+        public int PlayCount { get; set; } = 0; // Đếm lượt nghe
     }
 }
