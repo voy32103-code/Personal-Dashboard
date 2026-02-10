@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="manifest" href="~/manifest.json">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
     <meta name="theme-color" content="#1db954">
 </head>
 <body>
@@ -42,11 +43,12 @@
                 <a href="/?Mode=library" class="nav-btn @(Context.Request.Query["Mode"] == "library" ? "active" : "")">
                     <i class="fas fa-heart text-danger"></i> Liked Songs
                 </a>
-                <a href="/Admin/Dashboard" class="neumorph-btn btn-sm rounded-pill text-decoration-none py-2 mb-2 w-100 text-warning">
-                    <i class="fas fa-chart-line me-2"></i> Dashboard
-                </a>
+
                 @if (User.Identity.IsAuthenticated)
                 {
+                    <a href="/Admin/Dashboard" class="neumorph-btn btn-sm rounded-pill text-decoration-none py-2 mb-2 w-100 text-warning">
+                        <i class="fas fa-chart-line me-2"></i> Dashboard
+                    </a>
                     <div class="mt-4 p-3 glass-panel text-center">
                         <div class="small text-white-50 mb-2">Admin Panel</div>
                         <a href="/Portfolio/Create" class="neumorph-btn btn-sm rounded-pill text-decoration-none py-2 mb-2 w-100">
@@ -70,7 +72,7 @@
 
         <div class="player-bar">
             <div class="d-flex align-items-center gap-3" style="width: 30%;">
-                <img id="current-img" src="https://via.placeholder.com/50" style="width: 50px; height: 50px; border-radius: 8px; display: none; object-fit: cover; box-shadow: 0 0 10px rgba(0,0,0,0.5);" />
+                <img id="current-img" src="https://cdn-icons-png.flaticon.com/512/174/174872.png" style="width: 50px; height: 50px; border-radius: 8px; display: none; object-fit: cover; box-shadow: 0 0 10px rgba(0,0,0,0.5);" />
                 <div id="song-info" style="display: none;">
                     <div id="current-title" class="text-white fw-bold small">Chọn bài hát...</div>
                     <div id="current-desc" class="text-white-50 small" style="font-size: 0.7rem;">...</div>
@@ -105,10 +107,7 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 
     <script>
         // --- 1. KHỞI TẠO BIẾN ---
@@ -137,11 +136,10 @@
         connection.on("ReceiveMusicAction", function (action, url, time) {
             console.log("Nhận lệnh: " + action);
             if (action === "play") {
-                if (audio.src !== url) { // Nếu khác bài thì đổi bài
+                if (audio.src !== url) {
                     audio.src = url;
-                    // Cần cập nhật lại UI tên bài hát nếu có thể (Ở mức đơn giản thì chỉ cần nhạc chạy đúng)
                 }
-                if (Math.abs(audio.currentTime - time) > 1) { // Đồng bộ thời gian nếu lệch > 1s
+                if (Math.abs(audio.currentTime - time) > 1) {
                     audio.currentTime = time;
                 }
                 audio.play();
@@ -158,8 +156,6 @@
         }).catch(function (err) {
             return console.error(err.toString());
         });
-        // ==========================================
-
 
         // --- 2. HÀM PHÁT NHẠC & XỬ LÝ PLAYLIST ---
         function playMusic(url, title, img, desc, artist, listData) {
@@ -183,7 +179,6 @@
             }
             loadSong(playlist[currentIndex]);
 
-            // 🔥 Gửi lệnh Play ngay khi chọn bài
             if (connection.state === signalR.HubConnectionState.Connected) {
                 connection.invoke("SendMusicAction", "play", url, 0);
             }
@@ -209,21 +204,19 @@
             }
         }
 
-        // --- 3. CÁC NÚT ĐIỀU KHIỂN (CÓ SIGNALR) ---
+        // --- 3. CÁC NÚT ĐIỀU KHIỂN ---
         function togglePlay() {
             if (!audio.src) return;
 
             if (audio.paused) {
                 audio.play();
                 updatePlayIcon(true);
-                // 🔥 Gửi lệnh PLAY cho mọi người
                 if (connection.state === signalR.HubConnectionState.Connected) {
                     connection.invoke("SendMusicAction", "play", audio.src, audio.currentTime);
                 }
             } else {
                 audio.pause();
                 updatePlayIcon(false);
-                // 🔥 Gửi lệnh PAUSE cho mọi người
                 if (connection.state === signalR.HubConnectionState.Connected) {
                     connection.invoke("SendMusicAction", "pause", audio.src, audio.currentTime);
                 }
@@ -253,7 +246,6 @@
             }
             loadSong(playlist[currentIndex]);
 
-            // 🔥 Đồng bộ khi chuyển bài
             if (connection.state === signalR.HubConnectionState.Connected) {
                 connection.invoke("SendMusicAction", "play", playlist[currentIndex].audioUrl, 0);
             }
@@ -273,7 +265,6 @@
             }
             loadSong(playlist[currentIndex]);
 
-            // 🔥 Đồng bộ khi chuyển bài
             if (connection.state === signalR.HubConnectionState.Connected) {
                 connection.invoke("SendMusicAction", "play", playlist[currentIndex].audioUrl, 0);
             }
@@ -289,13 +280,11 @@
             repeatBtn.style.color = isRepeat ? "#1db954" : "#b3b3b3";
         }
 
-        // --- 4. SỰ KIỆN AUDIO ---
         audio.addEventListener("timeupdate", function() {
             if (audio.duration) {
                 var percent = (audio.currentTime / audio.duration) * 100;
                 progressBar.style.width = percent + "%";
                 currentTimeLabel.innerText = formatTime(audio.currentTime);
-                window.dispatchEvent(new CustomEvent('audioTimeUpdate', { detail: { currentTime: audio.currentTime } }));
             }
         });
 
@@ -319,14 +308,12 @@
                 var newTime = percent * audio.duration;
                 audio.currentTime = newTime;
 
-                // 🔥 Khi tua nhạc cũng đồng bộ
                 if (connection.state === signalR.HubConnectionState.Connected) {
                     connection.invoke("SendMusicAction", "play", audio.src, newTime);
                 }
             }
         });
 
-        // --- 5. LOGIC ÂM LƯỢNG ---
         function setVolume(val) {
             audio.volume = val;
             updateVolumeIcon(val);
@@ -361,7 +348,6 @@
 
         setVolume(1);
     </script>
-
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

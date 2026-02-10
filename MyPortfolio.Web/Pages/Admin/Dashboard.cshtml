@@ -10,7 +10,7 @@
 
     <div class="row g-4 mb-5">
         <div class="col-md-6">
-            <div class="glass-panel p-4 d-flex align-items-center justify-content-between">
+            <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100">
                 <div>
                     <h3 class="text-white fw-bold display-4 mb-0">@Model.TotalSongs</h3>
                     <p class="text-white-50 small text-uppercase fw-bold mb-0">Total Projects</p>
@@ -20,8 +20,9 @@
                 </div>
             </div>
         </div>
+
         <div class="col-md-6">
-            <div class="glass-panel p-4 d-flex align-items-center justify-content-between">
+            <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100">
                 <div>
                     <h3 class="text-white fw-bold display-4 mb-0">@Model.TotalPlays</h3>
                     <p class="text-white-50 small text-uppercase fw-bold mb-0">Total Plays</p>
@@ -35,7 +36,7 @@
 
     <div class="glass-panel p-4">
         <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2">Top Trending Songs</h4>
-        <div style="height: 400px;">
+        <div style="height: 400px; position: relative;">
             <canvas id="playsChart"></canvas>
         </div>
     </div>
@@ -44,55 +45,77 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    // Lấy dữ liệu từ C# Backend truyền sang
-    const titles = @Html.Raw(JsonSerializer.Serialize(Model.SongTitles));
-    const counts = @Html.Raw(JsonSerializer.Serialize(Model.PlayCounts));
+    document.addEventListener("DOMContentLoaded", function() {
+        // Lấy dữ liệu từ C# Backend truyền sang (Xử lý Null an toàn)
+        const titles = @Html.Raw(Model.SongTitles != null ? JsonSerializer.Serialize(Model.SongTitles) : "[]");
+        const counts = @Html.Raw(Model.PlayCounts != null ? JsonSerializer.Serialize(Model.PlayCounts) : "[]");
 
-    const ctx = document.getElementById('playsChart').getContext('2d');
+        const ctx = document.getElementById('playsChart').getContext('2d');
 
-    // Cấu hình Gradient màu cho đẹp (Tím -> Xanh)
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(188, 19, 254, 0.8)'); // Tím
-    gradient.addColorStop(1, 'rgba(29, 185, 84, 0.2)');  // Xanh lá nhạt
+        // Cấu hình Gradient màu cho đẹp (Tím -> Xanh)
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(188, 19, 254, 0.8)'); // Tím
+        gradient.addColorStop(1, 'rgba(29, 185, 84, 0.2)');  // Xanh lá nhạt
 
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: titles,
-            datasets: [{
-                label: 'Lượt nghe',
-                data: counts,
-                backgroundColor: gradient,
-                borderColor: '#bc13fe',
-                borderWidth: 1,
-                borderRadius: 5,
-                barPercentage: 0.6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }, // Ẩn chú thích cho gọn
-                tooltip: {
-                    backgroundColor: 'rgba(0,0,0,0.8)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    padding: 10,
-                    cornerRadius: 8
-                }
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: titles,
+                datasets: [{
+                    label: 'Lượt nghe',
+                    data: counts,
+                    backgroundColor: gradient,
+                    borderColor: '#bc13fe',
+                    borderWidth: 1,
+                    borderRadius: 5,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.7 // Giúp cột không quá to
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(255,255,255,0.1)' }, // Lưới mờ
-                    ticks: { color: '#b3b3b3' }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }, // Ẩn chú thích cho gọn
+                    tooltip: {
+                        backgroundColor: 'rgba(20, 20, 20, 0.9)',
+                        titleColor: '#1db954',
+                        bodyColor: '#fff',
+                        padding: 12,
+                        cornerRadius: 8,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 14 },
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' lượt nghe';
+                            }
+                        }
+                    }
                 },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#fff', font: { weight: 'bold' } }
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#b3b3b3',
+                            font: { size: 12 }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: '#fff',
+                            font: { weight: 'bold', size: 11 },
+                            maxRotation: 45, // Xoay chữ nếu tên bài hát quá dài
+                            minRotation: 0
+                        }
+                    }
                 }
             }
-        }
+        });
     });
 </script>
