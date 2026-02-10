@@ -2,7 +2,6 @@
 // for details on configuring this project to bundle and minify static web assets.
 
 // Write your JavaScript code.
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
 // 1. KẾT NỐI SERVER
 var connection = new signalR.HubConnectionBuilder().withUrl("/musicHub").build();
 
