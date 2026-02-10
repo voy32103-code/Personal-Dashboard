@@ -1,0 +1,83 @@
+﻿@page
+@model IndexModel // Tạm dùng model cũ hoặc tạo model rỗng
+@{
+    ViewData["Title"] = "Hồ Sơ Của Tôi";
+}
+
+<div class="profile-header" style="background: linear-gradient(transparent, rgba(0,0,0,0.9)), url('https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000&auto=format&fit=crop'); background-size: cover; height: 340px; display: flex; align-items: flex-end; padding: 30px;">
+    <div class="d-flex align-items-end gap-4">
+        <img src="https://via.placeholder.com/200" style="width: 200px; height: 200px; border-radius: 50%; box-shadow: 0 4px 60px rgba(0,0,0,0.5); object-fit: cover;" alt="Avatar">
+        <div>
+            <div class="d-flex align-items-center gap-2 text-white mb-2">
+                <i class="fas fa-check-circle text-primary"></i> <span class="text-uppercase fw-bold small">Verified Developer</span>
+            </div>
+            <h1 class="text-white fw-bold" style="font-size: 5rem; margin-bottom: 10px;">Tên Của Bạn</h1>
+            <p class="text-white opacity-75 fw-bold">
+                1,204,392 dòng code • 5 năm kinh nghiệm • Full-stack .NET Developer
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-4 py-4" style="background: #121212; min-height: 500px;">
+    <div class="mb-4 d-flex align-items-center gap-3">
+        <button class="btn btn-success rounded-pill p-3" style="width: 60px; height: 60px;"><i class="fas fa-play fa-lg text-black"></i></button>
+        <button class="btn btn-outline-light rounded-pill px-4 py-2 fw-bold text-uppercase border-white">Follow (Github)</button>
+        <button class="btn btn-transparent text-white fs-4"><i class="fas fa-ellipsis-h"></i></button>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <h3 class="text-white fw-bold mb-3">Top Skills (Tech Stack)</h3>
+            <div class="d-flex flex-column gap-2">
+                <div class="d-flex align-items-center p-2 rounded hover-bg" style="transition:0.2s;">
+                    <span class="text-white-50 me-3">1</span>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/4f/Csharp_Logo.png" width="40" class="me-3">
+                    <div class="flex-grow-1">
+                        <div class="text-white fw-bold">C# / .NET Core</div>
+                        <div class="text-white-50 small">Backend Development</div>
+                    </div>
+                    <span class="text-white-50">Expert</span>
+                </div>
+                <div class="d-flex align-items-center p-2 rounded hover-bg">
+                    <span class="text-white-50 me-3">2</span>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg" width="40" class="me-3">
+                    <div class="flex-grow-1">
+                        <div class="text-white fw-bold">ReactJS / Javascript</div>
+                        <div class="text-white-50 small">Frontend Interface</div>
+                    </div>
+                    <span class="text-white-50">Advanced</span>
+                </div>
+                <div class="d-flex align-items-center p-2 rounded hover-bg">
+                    <span class="text-white-50 me-3">3</span>
+                    <img src="https://www.svgrepo.com/show/331760/sql-database-generic.svg" width="40" class="me-3">
+                    <div class="flex-grow-1">
+                        <div class="text-white fw-bold">SQL Server / PostgreSQL</div>
+                        <div class="text-white-50 small">Database Management</div>
+                    </div>
+                    <span class="text-white-50">Advanced</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <h3 class="text-white fw-bold mb-3">About</h3>
+            <div class="position-relative rounded overflow-hidden" style="height: 400px; background: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085') center/cover;">
+                <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: rgba(0,0,0,0.7);">
+                    <p class="text-white mb-2 fw-bold">1,432 Monthly Commits</p>
+                    <p class="text-white-50 small mb-3">
+                        Xin chào, mình là [Tên]. Mình là một lập trình viên đam mê xây dựng các ứng dụng web hiệu năng cao. Web này chính là một ví dụ về khả năng của mình!
+                    </p>
+                    <a href="#" class="text-white text-uppercase fw-bold text-decoration-none" style="letter-spacing:1px;">Facebook</a> •
+                    <a href="#" class="text-white text-uppercase fw-bold text-decoration-none" style="letter-spacing:1px;">LinkedIn</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-bg:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+</style>

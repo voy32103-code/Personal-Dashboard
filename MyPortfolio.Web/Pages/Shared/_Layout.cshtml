@@ -17,34 +17,25 @@
             </a>
 
             <div class="nav-links">
-                <a href="/" class="nav-btn @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" && Context.Request.Query["Mode"] != "library" ? "active" : "")">
-                    <i class="fas fa-home"></i> Home
+                <a href="/" class="nav-btn ..."><i class="fas fa-home"></i> Home</a>
+
+                <a href="/Profile" class="nav-btn">
+                    <i class="fas fa-user-circle"></i> About Me
                 </a>
-                <a href="#" onclick="activateSearch()" class="nav-btn">
-                    <i class="fas fa-search"></i> Search
-                </a>
-                <a href="/?Mode=library" class="nav-btn @(Context.Request.Query["Mode"] == "library" ? "active" : "")">
-                    <i class="fas fa-book"></i> Your Library
+
+                <a href="/Portfolio/Details/1" class="nav-btn">
+                    <i class="fas fa-file-alt"></i> My CV (Resume)
                 </a>
 
                 <div style="height: 16px;"></div>
 
-                <a href="/Portfolio/Create" class="nav-btn">
-                    <i class="fas fa-plus-square"></i> Create Project
-                </a>
+                <div class="text-uppercase text-muted fw-bold small px-4 mb-2" style="font-size: 0.7rem; letter-spacing: 1px;">
+                    Playlists (Projects)
+                </div>
 
-                @if (User.Identity.IsAuthenticated)
-                {
-                    <a href="/Login?handler=Logout" class="nav-btn text-danger">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
-                }
-                else
-                {
-                    <a href="/Login" class="nav-btn">
-                        <i class="fas fa-sign-in-alt"></i> Login Admin
-                    </a>
-                }
+                <a href="#" class="nav-btn"><i class="fas fa-globe"></i> Web Apps</a>
+                <a href="#" class="nav-btn"><i class="fas fa-mobile-alt"></i> Mobile Apps</a>
+                <a href="#" class="nav-btn"><i class="fas fa-gamepad"></i> Game Dev</a>
             </div>
         </div>
 
