@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace MyPortfolio.Web.Pages
@@ -10,67 +12,109 @@ namespace MyPortfolio.Web.Pages
     {
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly ILogger<LoginModel> _logger; // BUG 7: Inject Logger
 
-        public LoginModel(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager)
+        public LoginModel(
+            SignInManager<IdentityUser> signInManager,
+            UserManager<IdentityUser> userManager,
+            ILogger<LoginModel> logger)
         {
             _signInManager = signInManager;
             _userManager = userManager;
+            _logger = logger;
         }
 
+        // BUG 2 FIX: Validate Format & Required
         [BindProperty]
+        [Required(ErrorMessage = "Vui lòng nhập Email.")]
+        [EmailAddress(ErrorMessage = "Định dạng Email không hợp lệ.")]
         public string Email { get; set; } = "";
 
         [BindProperty]
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
         public string Password { get; set; } = "";
 
-        // Danh sách các nút đăng nhập ngoài (Google, Facebook...)
         public IList<AuthenticationScheme> ExternalLogins { get; set; }
 
         public string ErrorMessage { get; set; } = "";
         public string ReturnUrl { get; set; }
 
+        /// <summary>
+        /// BUG 6 FIX: Ngăn chặn Open Redirect (Phishing)
+        /// Chỉ cho phép chuyển hướng trong nội bộ website
+        /// </summary>
+        private string ValidateReturnUrl(string returnUrl)
+        {
+            return (Url.IsLocalUrl(returnUrl)) ? returnUrl : Url.Content("~/");
+        }
+
         // --- 1. KHI VÀO TRANG (GET) ---
         public async Task OnGetAsync(string returnUrl = null)
         {
-            ReturnUrl = returnUrl ?? Url.Content("~/");
+            ReturnUrl = ValidateReturnUrl(returnUrl);
 
-            // Xóa cookie cũ để login sạch sẽ
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-
-            // Lấy danh sách provider (Google) để hiển thị nút bấm bên View
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
-            // Tự động tạo Admin nếu chưa có (Code cũ của bạn)
-            var adminEmail = "admin@myportfolio.com";
-            if (await _userManager.FindByEmailAsync(adminEmail) == null)
-            {
-                var newAdmin = new IdentityUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
-                await _userManager.CreateAsync(newAdmin, "Admin123");
-            }
+            // BUG 1 FIX: Đã xóa đoạn Query Database tạo Admin ở đây.
+            // Việc khởi tạo Admin (Seeding) nên được đưa vào Program.cs chạy 1 lần lúc startup.
         }
 
         // --- 2. ĐĂNG NHẬP BẰNG MẬT KHẨU (POST) ---
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
-            // Load lại danh sách nút Google nếu login thất bại để không bị mất nút
+            returnUrl = ValidateReturnUrl(returnUrl);
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
-            var result = await _signInManager.PasswordSignInAsync(Email, Password, isPersistent: true, lockoutOnFailure: false);
-
-            if (result.Succeeded)
+            if (!ModelState.IsValid)
             {
-                return LocalRedirect(returnUrl);
+                return Page(); // Trả về lỗi Validation (BUG 2)
             }
 
-            ErrorMessage = "Sai email hoặc mật khẩu rồi đại ca ơi!";
-            return Page();
+            try
+            {
+                // BUG 2 FIX: Trim và Lowercase
+                var normalizedEmail = Email.Trim().ToLower();
+
+                // BUG 3 FIX: lockoutOnFailure = true (Khóa account nếu nhập sai 5 lần)
+                var result = await _signInManager.PasswordSignInAsync(
+                    normalizedEmail,
+                    Password,
+                    isPersistent: true,
+                    lockoutOnFailure: true);
+
+                if (result.Succeeded)
+                {
+                    _logger.LogInformation("User {Email} logged in successfully.", normalizedEmail);
+                    return LocalRedirect(returnUrl);
+                }
+                if (result.RequiresTwoFactor)
+                {
+                    return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = true });
+                }
+                if (result.IsLockedOut)
+                {
+                    _logger.LogWarning("Account locked out for {Email}", normalizedEmail);
+                    ErrorMessage = "Tài khoản đã bị khóa do nhập sai nhiều lần. Vui lòng thử lại sau 5 phút.";
+                    return Page();
+                }
+
+                ErrorMessage = "Sai email hoặc mật khẩu.";
+                return Page();
+            }
+            catch (Exception ex)
+            {
+                // BUG 7 FIX: Xử lý ngoại lệ, tránh app crash
+                _logger.LogError(ex, "Lỗi hệ thống khi user {Email} đăng nhập.", Email);
+                ErrorMessage = "Hệ thống đang bận. Vui lòng thử lại sau.";
+                return Page();
+            }
         }
 
         // --- 3. BẮT ĐẦU GỌI SANG GOOGLE (POST) ---
         public IActionResult OnPostExternalLogin(string provider, string returnUrl = null)
         {
-            // Yêu cầu chuyển hướng về hàm OnGetCallbackAsync sau khi Google xử lý xong
+            returnUrl = ValidateReturnUrl(returnUrl);
             var redirectUrl = Url.Page("./Login", pageHandler: "Callback", values: new { returnUrl });
             var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
             return new ChallengeResult(provider, properties);
@@ -79,67 +123,98 @@ namespace MyPortfolio.Web.Pages
         // --- 4. NHẬN KẾT QUẢ TỪ GOOGLE TRẢ VỀ (CALLBACK) ---
         public async Task<IActionResult> OnGetCallbackAsync(string returnUrl = null, string remoteError = null)
         {
-            returnUrl = returnUrl ?? Url.Content("~/");
+            returnUrl = ValidateReturnUrl(returnUrl);
 
-            // Nếu Google báo lỗi
             if (remoteError != null)
             {
                 ErrorMessage = $"Lỗi từ Google: {remoteError}";
                 return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
             }
 
-            // Lấy thông tin User từ Google
-            var info = await _signInManager.GetExternalLoginInfoAsync();
-            if (info == null)
+            try
             {
-                ErrorMessage = "Không lấy được thông tin từ Google.";
-                return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
-            }
-
-            // Thử đăng nhập (nếu User này đã từng đăng nhập trước đó)
-            var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
-            if (result.Succeeded)
-            {
-                return LocalRedirect(returnUrl);
-            }
-
-            // Nếu chưa có tài khoản -> TỰ ĐỘNG TẠO MỚI (Auto Provisioning)
-            if (result.IsLockedOut)
-            {
-                return RedirectToPage("./Lockout");
-            }
-            else
-            {
-                // Lấy Email từ Google
-                var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-                if (email != null)
+                var info = await _signInManager.GetExternalLoginInfoAsync();
+                if (info == null)
                 {
-                    var user = new IdentityUser { UserName = email, Email = email, EmailConfirmed = true };
+                    ErrorMessage = "Không lấy được thông tin từ Google.";
+                    return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+                }
 
-                    // Tạo User mới trong Database (Không cần mật khẩu vì dùng Google)
+                // BUG 8 FIX: bypassTwoFactor = false để tôn trọng cài đặt 2FA
+                var result = await _signInManager.ExternalLoginSignInAsync(
+                    info.LoginProvider,
+                    info.ProviderKey,
+                    isPersistent: false,
+                    bypassTwoFactor: false);
+
+                if (result.Succeeded)
+                {
+                    _logger.LogInformation("User logged in with {Provider}.", info.LoginProvider);
+                    return LocalRedirect(returnUrl);
+                }
+                if (result.RequiresTwoFactor)
+                {
+                    return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl });
+                }
+                if (result.IsLockedOut)
+                {
+                    ErrorMessage = "Tài khoản đã bị khóa.";
+                    return Page();
+                }
+
+                // NẾU CHƯA CÓ TÀI KHOẢN -> TẠO MỚI / LIÊN KẾT
+
+                // BUG 4 FIX: Xử lý trường hợp Google không trả về Email
+                var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    // Tạo Pseudo-email: username_providerid@provider-auth.internal
+                    email = $"{info.ProviderKey}@{info.LoginProvider.ToLower()}-auth.internal";
+                    _logger.LogWarning("Google did not provide email. Using pseudo-email: {Email}", email);
+                }
+
+                // BUG 5 FIX: Double check (Race Condition) - Tránh tạo trùng lặp
+                var existingUser = await _userManager.FindByEmailAsync(email);
+
+                if (existingUser != null)
+                {
+                    // User đã tồn tại, chỉ cần liên kết Google vào tài khoản này
+                    var linkResult = await _userManager.AddLoginAsync(existingUser, info);
+                    if (linkResult.Succeeded)
+                    {
+                        await _signInManager.SignInAsync(existingUser, isPersistent: false, info.LoginProvider);
+                        return LocalRedirect(returnUrl);
+                    }
+                }
+                else
+                {
+                    // Tạo hoàn toàn mới
+                    var user = new IdentityUser { UserName = email, Email = email, EmailConfirmed = true };
                     var resultCreate = await _userManager.CreateAsync(user);
 
                     if (resultCreate.Succeeded)
                     {
-                        // Liên kết User mới này với Google Login
                         resultCreate = await _userManager.AddLoginAsync(user, info);
                         if (resultCreate.Succeeded)
                         {
-                            // Đăng nhập luôn
                             await _signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
+                            _logger.LogInformation("Created new account from {Provider}.", info.LoginProvider);
                             return LocalRedirect(returnUrl);
                         }
                     }
-                    else
-                    {
-                        // Nếu lỗi (ví dụ: mật khẩu không đủ mạnh - dù ở đây ko set pass), in lỗi ra
-                        var errors = string.Join(", ", resultCreate.Errors.Select(e => e.Description));
-                        ErrorMessage = $"Lỗi tạo User: {errors}";
-                        return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
-                    }
+
+                    var errors = string.Join(", ", resultCreate.Errors.Select(e => e.Description));
+                    _logger.LogError("Failed to create user from external login: {Errors}", errors);
+                    ErrorMessage = $"Lỗi tạo User: {errors}";
                 }
 
-                ErrorMessage = "Không tìm thấy Email từ Google.";
+                return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+            }
+            catch (Exception ex)
+            {
+                // BUG 7 FIX: Bắt mọi lỗi từ network/API
+                _logger.LogError(ex, "Lỗi hệ thống khi xử lý Callback từ Google.");
+                ErrorMessage = "Đã xảy ra lỗi khi kết nối với máy chủ đăng nhập.";
                 return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
             }
         }
@@ -148,6 +223,7 @@ namespace MyPortfolio.Web.Pages
         public async Task<IActionResult> OnGetLogoutAsync()
         {
             await _signInManager.SignOutAsync();
+            _logger.LogInformation("User logged out.");
             return RedirectToPage("/Index");
         }
     }

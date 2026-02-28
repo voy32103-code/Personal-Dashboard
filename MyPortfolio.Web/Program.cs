@@ -43,14 +43,41 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 builder.Services.AddSignalR();
 builder.Services.AddRazorPages();
 
-// 1.5. Đăng ký Google Authentication (ĐÃ CHUYỂN LÊN ĐÂY)
+// 1.5. Đăng ký Google Authentication
+// 1.5. Đăng ký Google Authentication
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
     {
         IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
         options.ClientId = googleAuthNSection["ClientId"];
         options.ClientSecret = googleAuthNSection["ClientSecret"];
+
+        // 🔥 THÊM ĐOẠN NÀY ĐỂ ÉP GOOGLE LUÔN HỎI LẠI TÀI KHOẢN 🔥
+        options.Events.OnRedirectToAuthorizationEndpoint = context =>
+        {
+            // Thêm tham số prompt=select_account vào URL gửi đi Google
+            context.Response.Redirect(context.RedirectUri + "&prompt=select_account");
+            return Task.CompletedTask;
+        };
     });
+
+// 1.6. CẤU HÌNH REDIS (Phải nằm ở đây, TRƯỚC khi Build) 🔥
+var redisConnection = builder.Configuration.GetConnectionString("RedisConnection")
+                      ?? Environment.GetEnvironmentVariable("RedisConnection");
+
+if (!string.IsNullOrEmpty(redisConnection))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConnection;
+        options.InstanceName = "MyPortfolio_"; // Tiền tố để không bị trùng key
+    });
+}
+else
+{
+    // Nếu chưa có Redis thì chạy tạm bộ nhớ trong (để không bị lỗi khi dev)
+    builder.Services.AddDistributedMemoryCache();
+}
 
 // ==========================================
 // 2. BUILD ỨNG DỤNG (Chốt sổ Services)
@@ -60,7 +87,6 @@ var app = builder.Build();
 
 // ==========================================
 // 3. KHU VỰC PIPELINE (Middleware)
-// (Thứ tự các dòng lệnh ở đây RẤT QUAN TRỌNG)
 // ==========================================
 
 if (!app.Environment.IsDevelopment())
@@ -72,17 +98,21 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+// Xác thực & Phân quyền phải nằm sau Routing
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapRazorPages();
 app.MapHub<MusicHub>("/musicHub");
+
+// Tự động Migrate Database
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<MyPortfolio.Infrastructure.Data.ApplicationDbContext>();
-        // Lệnh này tương đương với Update-Database:
         context.Database.Migrate();
     }
     catch (Exception ex)
@@ -91,4 +121,5 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "Lỗi khi khởi tạo Database.");
     }
 }
+
 app.Run();
