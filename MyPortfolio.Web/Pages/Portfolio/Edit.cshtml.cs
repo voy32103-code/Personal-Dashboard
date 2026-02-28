@@ -2,7 +2,11 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MyPortfolio.Core.Entities;
 using MyPortfolio.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 
 namespace MyPortfolio.Web.Pages.Portfolio
 {
@@ -11,20 +15,32 @@ namespace MyPortfolio.Web.Pages.Portfolio
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly IDistributedCache _cache;
+        private readonly ILogger<EditModel> _logger;
 
-        public EditModel(ApplicationDbContext context, IWebHostEnvironment environment)
+        private readonly string[] _allowedImageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+        private readonly string[] _allowedAudioExtensions = { ".mp3", ".wav", ".ogg" };
+        private const long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+        public EditModel(
+            ApplicationDbContext context,
+            IWebHostEnvironment environment,
+            IDistributedCache cache,
+            ILogger<EditModel> logger)
         {
             _context = context;
             _environment = environment;
+            _cache = cache;
+            _logger = logger;
         }
 
         [BindProperty]
-        public PortfolioItem PortfolioItem { get; set; } = default!;
+        public PortfolioItem PortfolioItem { get; set; } = new PortfolioItem();
 
         [BindProperty]
         public IFormFile? ImageUpload { get; set; }
 
-        [BindProperty] // ← THÊM ATTRIBUTE NÀY
+        [BindProperty]
         public IFormFile? AudioUpload { get; set; }
 
         public async Task<IActionResult> OnGetAsync(int? id)
@@ -42,68 +58,142 @@ namespace MyPortfolio.Web.Pages.Portfolio
         {
             if (!ModelState.IsValid) return Page();
 
+            // 1. Lấy record gốc từ Database để so sánh và cập nhật an toàn (Tránh user fake ID)
+            var existingItem = await _context.PortfolioItems.FindAsync(PortfolioItem.Id);
+            if (existingItem == null) return NotFound();
+
+            // BUG E4 FIX: Đảm bảo thư mục uploads tồn tại
+            var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads");
+            if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
             // --- LOGIC UPLOAD ẢNH (EDIT) ---
             if (ImageUpload != null)
             {
-                // Xóa ảnh cũ nếu tồn tại
-                if (!string.IsNullOrEmpty(PortfolioItem.ImageUrl) &&
-                    !PortfolioItem.ImageUrl.Contains("placeholder"))
+                // BUG E2 FIX: Validate dung lượng và định dạng file
+                var ext = Path.GetExtension(ImageUpload.FileName).ToLowerInvariant();
+                if (!_allowedImageExtensions.Contains(ext) || ImageUpload.Length > MAX_FILE_SIZE)
                 {
-                    var oldImagePath = Path.Combine(_environment.WebRootPath, PortfolioItem.ImageUrl.TrimStart('/'));
-                    if (System.IO.File.Exists(oldImagePath))
-                    {
-                        System.IO.File.Delete(oldImagePath);
-                    }
+                    ModelState.AddModelError("ImageUpload", "File ảnh không hợp lệ hoặc vượt quá 10MB.");
+                    PortfolioItem = existingItem; // Phục hồi data hiển thị
+                    return Page();
                 }
 
-                // Upload ảnh mới
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ImageUpload.FileName);
-                var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", fileName);
+                // BUG E3 & E9 FIX: Xóa file cũ một cách an toàn
+                if (IsLocalFile(existingItem.ImageUrl))
+                {
+                    var oldPath = Path.Combine(_environment.WebRootPath, existingItem.ImageUrl.TrimStart('/'));
+                    TryDeleteOldFile(oldPath);
+                }
 
-                using (var fileStream = new FileStream(uploadPath, FileMode.Create))
+                // BUG E8 FIX: Đổi tên file để chống Path Traversal
+                var fileName = Guid.NewGuid().ToString("N") + ext;
+                var uploadPath = Path.Combine(uploadsFolder, fileName);
+
+                using (var fileStream = new FileStream(uploadPath, FileMode.CreateNew))
                 {
                     await ImageUpload.CopyToAsync(fileStream);
                 }
-
-                PortfolioItem.ImageUrl = "/uploads/" + fileName;
+                existingItem.ImageUrl = "/uploads/" + fileName;
             }
 
             // --- LOGIC UPLOAD AUDIO (EDIT) ---
             if (AudioUpload != null)
             {
-                var audioName = Guid.NewGuid().ToString() + Path.GetExtension(AudioUpload.FileName);
-                var audioPath = Path.Combine(_environment.WebRootPath, "uploads", audioName);
+                var ext = Path.GetExtension(AudioUpload.FileName).ToLowerInvariant();
+                if (!_allowedAudioExtensions.Contains(ext) || AudioUpload.Length > MAX_FILE_SIZE)
+                {
+                    ModelState.AddModelError("AudioUpload", "File audio không hợp lệ hoặc vượt quá 10MB.");
+                    PortfolioItem = existingItem;
+                    return Page();
+                }
 
-                using (var stream = new FileStream(audioPath, FileMode.Create))
+                if (IsLocalFile(existingItem.AudioUrl))
+                {
+                    var oldPath = Path.Combine(_environment.WebRootPath, existingItem.AudioUrl.TrimStart('/'));
+                    TryDeleteOldFile(oldPath);
+                }
+
+                var audioName = Guid.NewGuid().ToString("N") + ext;
+                var audioPath = Path.Combine(uploadsFolder, audioName);
+
+                using (var stream = new FileStream(audioPath, FileMode.CreateNew))
                 {
                     await AudioUpload.CopyToAsync(stream);
                 }
-
-                PortfolioItem.AudioUrl = "/uploads/" + audioName;
+                existingItem.AudioUrl = "/uploads/" + audioName;
             }
 
-            // Fix lỗi ngày giờ UTC
-            PortfolioItem.CreatedDate = DateTime.SpecifyKind(PortfolioItem.CreatedDate, DateTimeKind.Utc);
-
-            _context.Attach(PortfolioItem).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            // 2. Chỉ cập nhật các trường được phép (Tránh đè CreatedDate hoặc PlayCount)
+            existingItem.Title = PortfolioItem.Title;
+            existingItem.Description = PortfolioItem.Description;
+            existingItem.Artist = PortfolioItem.Artist;
+            existingItem.ProjectUrl = PortfolioItem.ProjectUrl;
+            existingItem.Lyrics = PortfolioItem.Lyrics;
 
             try
             {
                 await _context.SaveChangesAsync();
+
+                // BUG E7 FIX: Lưu log hành động Edit
+                var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "Unknown User";
+                _logger.LogInformation($"📝 Bài hát ID={existingItem.Id} vừa được cập nhật bởi {userEmail} lúc {DateTime.UtcNow}");
+
+                // BUG E6 FIX: Đập vỡ các Cache liên quan
+                await InvalidateRelevantCachesAsync();
             }
-            catch (Exception)
+            // BUG E5 FIX: Bắt lỗi Race Condition
+            catch (DbUpdateConcurrencyException ex)
             {
-                if (!_context.PortfolioItems.Any(e => e.Id == PortfolioItem.Id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                _logger.LogWarning(ex, $"Xung đột dữ liệu khi cập nhật bài hát ID {existingItem.Id}");
+                ModelState.AddModelError("", "Bài hát này vừa được thay đổi bởi một người khác. Vui lòng tải lại trang.");
+                PortfolioItem = existingItem;
+                return Page();
             }
 
             return RedirectToPage("/Index");
+        }
+
+        // ==========================================
+        // HELPER METHODS
+        // ==========================================
+
+        private bool IsLocalFile(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url)) return false;
+            if (url.Contains("no-image.png", StringComparison.OrdinalIgnoreCase)) return false;
+
+            return url.StartsWith("/") &&
+                   !url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                   !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void TryDeleteOldFile(string filePath)
+        {
+            try
+            {
+                var uploadsDir = Path.Combine(_environment.WebRootPath, "uploads");
+                var fullPath = Path.GetFullPath(filePath);
+                var fullUploadsDir = Path.GetFullPath(uploadsDir);
+
+                if (fullPath.StartsWith(fullUploadsDir, StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(fullPath))
+                {
+                    System.IO.File.Delete(fullPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Không thể xóa file cũ ({filePath}): {ex.Message}");
+            }
+        }
+
+        private async Task InvalidateRelevantCachesAsync()
+        {
+            var keysToRemove = new[] { "home_projects_normal_none", "home_projects_library_none", "dashboard_stats" };
+            foreach (var key in keysToRemove)
+            {
+                try { await _cache.RemoveAsync(key); }
+                catch { /* Bỏ qua lỗi cache */ }
+            }
         }
     }
 }

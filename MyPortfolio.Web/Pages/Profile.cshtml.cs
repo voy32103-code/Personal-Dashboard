@@ -17,53 +17,58 @@ namespace MyPortfolio.Web.Pages
     public class ProfileModel : PageModel
     {
         public string FullName { get; set; } = "VÕ HƯNG YÊN";
-        public string Title { get; set; } = ".NET Developer • System Architect";
-        public int LinesOfCode { get; set; } = 12500; // Số dòng code ước tính của dự án này
+
+        // Cập nhật chức danh sát với thực tế để gây ấn tượng với nhà tuyển dụng
+        public string Title { get; set; } = "SE Student @ HUFLIT • .NET Full-Stack Developer";
+
+        // Tăng số dòng code lên chút vì nãy giờ fix bug quá trời! 😆
+        public int LinesOfCode { get; set; } = 15800;
         public string GithubUrl { get; set; } = "https://github.com/vohungyen";
 
         public List<SkillItem> Skills { get; set; } = new List<SkillItem>();
 
         public void OnGet()
         {
-            // CẬP NHẬT: Tech Stack thực tế của dự án Portfolio này
+            // CẬP NHẬT: Tech Stack thực tế bao gồm những thứ bạn vừa tự tay code
             Skills = new List<SkillItem>
             {
                 new SkillItem {
-                    Name = ".NET 8 & SignalR",
-                    Description = "Real-time Audio Sync & MVC Core",
+                    Name = ".NET 8 & System Architecture",
+                    Description = "Razor Pages, SignalR & Clean Code",
                     Icon = "fab fa-microsoft",
-                    Color = "text-white",
+                    Color = "text-primary",
                     Badge = "Core",
                     BadgeColor = "bg-primary",
-                    Progress = 100
+                    Progress = 95
                 },
                 new SkillItem {
-                    Name = "PostgreSQL & EF Core",
-                    Description = "Neon Tech Cloud DB & LINQ Queries",
+                    Name = "Database & EF Core",
+                    Description = "Neon PostgreSQL & LINQ Optimization",
                     Icon = "fas fa-database",
                     Color = "text-info",
                     Badge = "Data",
                     BadgeColor = "bg-info",
-                    Progress = 95
+                    Progress = 90
+                },
+                new SkillItem {
+                    Name = "Redis Distributed Caching",
+                    Description = "Cache-Aside, Performance & Invalidation",
+                    Icon = "fas fa-bolt", // Icon tia sét thể hiện tốc độ
+                    Color = "text-warning",
+                    Badge = "Speed",
+                    BadgeColor = "bg-warning text-dark",
+                    Progress = 85
                 },
                 new SkillItem {
                     Name = "Security & OAuth 2.0",
-                    Description = "Google Authentication & Identity",
+                    Description = "Google Auth, Anti-Traversal & Concurrency",
                     Icon = "fas fa-shield-alt",
                     Color = "text-danger",
                     Badge = "Sec",
                     BadgeColor = "bg-danger",
-                    Progress = 90
+                    Progress = 88
                 },
-                new SkillItem {
-                    Name = "DevOps (Docker/Render)",
-                    Description = "CI/CD Pipeline & Containerization",
-                    Icon = "fab fa-docker",
-                    Color = "text-warning",
-                    Badge = "Ops",
-                    BadgeColor = "bg-warning text-dark",
-                    Progress = 85
-                }
+               
             };
         }
     }
