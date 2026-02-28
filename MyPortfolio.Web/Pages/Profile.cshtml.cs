@@ -19,8 +19,8 @@ namespace MyPortfolio.Web.Pages
         public string FullName { get; set; } = "VÕ HƯNG YÊN";
 
         public string Title { get; set; } = "SE Student @ HUFLIT • .NET Full-Stack Developer";
-        public int LinesOfCode { get; set; } = 15800;
-        public string GithubUrl { get; set; } = "https://github.com/vohungyen";
+        public int LinesOfCode { get; set; } = 2200;
+        public string GithubUrl { get; set; } = "https://github.com/voy32103-code";
 
         public List<SkillItem> Skills { get; set; } = new List<SkillItem>();
 

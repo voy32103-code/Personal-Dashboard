@@ -111,11 +111,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"
-            integrity="sha512-lz/XU4/f4X9hVpYqV2z+k9t+2M4/30T6yfpwO/vj6D7mdPJKOQ8TGD8/joVjR48c+vJqD+0/J5XN+o4iT/wX3A=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
     <script>
         // --- 1. KHỞI TẠO BIẾN ---
         var audio = document.getElementById("audio-player");
@@ -399,22 +395,31 @@
         // VOLUME & UTILS
         // ==========================================
         // Ép kiểu dữ liệu (ParseFloat)
-        function setVolume(val) {
+               function setVolume(val) {
             val = parseFloat(val);
-            audio.volume = Math.max(0, Math.min(1, val));
-            updateVolumeIcon(val);
-        }
+            if (isNaN(val)) val = 1;
 
-        function toggleMute() {
+            var finalVol = Math.max(0, Math.min(1, val));
+
+            audio.volume = finalVol;
+            volumeSlider.value = finalVol;
+
+            // ✅ FIX: cập nhật lastVolume nếu không phải đang mute
+            if (finalVol > 0) {
+                lastVolume = finalVol;
+            }
+
+            updateVolumeIcon(finalVol);
+        }
+               function toggleMute() {
             if (audio.volume > 0) {
                 lastVolume = audio.volume;
                 setVolume(0);
-                volumeSlider.value = 0;
             } else {
-                setVolume(lastVolume);
-                volumeSlider.value = lastVolume;
+                setVolume(lastVolume || 1);
             }
         }
+
 
         function updateVolumeIcon(vol) {
             vol = parseFloat(vol);
@@ -437,28 +442,55 @@
             return timeStr;
         }
 
-        setVolume(1);
+               window.addEventListener("load", function () {
+            if (isRepeat) repeatBtn.style.color = "#1db954";
+            if (isShuffle) shuffleBtn.style.color = "#1db954";
+
+            volumeSlider.value = 1;   // ✅ FIX
+            setVolume(1);
+        });
 
         // ==========================================
         // ⌨️ UPGRADE 1: KEYBOARD SHORTCUTS 
         // ==========================================
-        document.addEventListener("keydown", function(e) {
-            // Bỏ qua nếu user đang gõ chữ vào thanh tìm kiếm hoặc form
+              document.addEventListener("keydown", function (e) {
+
             if (e.target.matches("input, textarea")) return;
 
-            switch(e.code) {
+            switch (e.code) {
+
                 case "Space":
-                    e.preventDefault(); // Tránh bị cuộn trang
+                    e.preventDefault();
+                    if (!audio.src) return;
+
                     togglePlay();
                     break;
+
                 case "ArrowRight":
+                    if (e.target.id === "volume-slider") return;
+                    e.preventDefault();
                     nextSong();
                     break;
+
                 case "ArrowLeft":
+                    if (e.target.id === "volume-slider") return;
+                    e.preventDefault();
                     prevSong();
                     break;
+
                 case "KeyM":
                     toggleMute();
+                    break;
+
+                // 🔥 BONUS: tăng giảm âm lượng bằng phím mũi tên lên/xuống
+                case "ArrowUp":
+                    e.preventDefault();
+                    setVolume(audio.volume + 0.05);
+                    break;
+
+                case "ArrowDown":
+                    e.preventDefault();
+                    setVolume(audio.volume - 0.05);
                     break;
             }
         });

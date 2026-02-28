@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ==========================================
 // 1. KHU VỰC ĐĂNG KÝ DỊCH VỤ (Services)
-// (Tất cả code builder.Services... phải nằm ở đây)
+// 
 // ==========================================
 
 // 1.1. Đăng ký Database
@@ -44,7 +44,6 @@ builder.Services.AddSignalR();
 builder.Services.AddRazorPages();
 
 // 1.5. Đăng ký Google Authentication
-// 1.5. Đăng ký Google Authentication
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
     {
@@ -52,7 +51,7 @@ builder.Services.AddAuthentication()
         options.ClientId = googleAuthNSection["ClientId"];
         options.ClientSecret = googleAuthNSection["ClientSecret"];
 
-        // 🔥 THÊM ĐOẠN NÀY ĐỂ ÉP GOOGLE LUÔN HỎI LẠI TÀI KHOẢN 🔥
+        //  THÊM ĐOẠN NÀY ĐỂ ÉP GOOGLE LUÔN HỎI LẠI TÀI KHOẢN 
         options.Events.OnRedirectToAuthorizationEndpoint = context =>
         {
             // Thêm tham số prompt=select_account vào URL gửi đi Google
@@ -61,7 +60,7 @@ builder.Services.AddAuthentication()
         };
     });
 
-// 1.6. CẤU HÌNH REDIS (Phải nằm ở đây, TRƯỚC khi Build) 🔥
+// 1.6. CẤU HÌNH REDIS (Phải nằm ở đây, TRƯỚC khi Build) 
 var redisConnection = builder.Configuration.GetConnectionString("RedisConnection")
                       ?? Environment.GetEnvironmentVariable("RedisConnection");
 
