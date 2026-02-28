@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using MyPortfolio.Web.Hubs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,12 +78,20 @@ else
     // Nếu chưa có Redis thì chạy tạm bộ nhớ trong (để không bị lỗi khi dev)
     builder.Services.AddDistributedMemoryCache();
 }
+// --- THÊM ĐOẠN NÀY ĐỂ XỬ LÝ PROXY CỦA RENDER ---
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Xóa các proxy mặc định để cho phép Render load balancer truyền header vào
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+// -----------------------------------------------
 
 // ==========================================
 // 2. BUILD ỨNG DỤNG (Chốt sổ Services)
 // ==========================================
 var app = builder.Build();
-
 
 // ==========================================
 // 3. KHU VỰC PIPELINE (Middleware)
@@ -93,7 +102,7 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
-
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
