@@ -27,7 +27,11 @@
                 <button class="neumorph-btn rounded-circle text-success" style="width: 60px; height: 60px; font-size: 1.5rem;" onclick="playCurrentSong()">
                     <i class="fas fa-play"></i>
                 </button>
-                <a href="/Portfolio/Edit/@Model.PortfolioItem.Id" class="neumorph-btn px-4 rounded-pill text-decoration-none">Edit Project</a>
+                <a asp-page="/Portfolio/Edit"
+                   asp-route-id="@Model.PortfolioItem.Id"
+                   class="neumorph-btn px-4 rounded-pill text-decoration-none">
+                    Edit Project
+                </a>
             </div>
         </div>
     </div>

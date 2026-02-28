@@ -16,7 +16,8 @@
                      class="rounded-circle"
                      onerror="this.src='https://via.placeholder.com/232?text=Avatar'"
                      style="width: 100%; height: 100%; object-fit: cover; border: 4px solid #121212;"
-                     alt="Avatar">
+                     alt="Avatar"
+                     loading="lazy">
                 <div class="status-dot"></div>
             </div>
 
@@ -46,21 +47,48 @@
 <div class="container-fluid px-4 py-5" style="background: #121212; min-height: 600px; position: relative;">
 
     <div class="mb-5 d-flex align-items-center gap-4 flex-wrap">
-        <button class="neumorph-btn-round text-success" title="Play Intro">
+        <button class="neumorph-btn-round text-success" title="Play Intro" onclick="playIntro()">
             <i class="fas fa-play fa-lg"></i>
         </button>
 
-        <a href="@Model.GithubUrl" target="_blank" class="neumorph-btn-pill text-white fw-bold text-uppercase text-decoration-none">
+        <a href="@Model.GithubUrl" target="_blank" rel="noopener noreferrer" class="neumorph-btn-pill text-white fw-bold text-uppercase text-decoration-none">
             <i class="fab fa-github me-2"></i> Follow Github
         </a>
 
-        <div class="ms-auto d-flex gap-3">
-            <button class="neumorph-btn-round text-white fs-5" title="Download CV">
+        <div class="ms-auto d-flex gap-3 position-relative">
+            <a asp-page-handler="DownloadCv"
+               asp-route-id="@Model.UserId"
+               class="neumorph-btn-round text-white fs-5 text-decoration-none"
+               title="Download Live CV">
                 <i class="fas fa-download"></i>
-            </button>
-            <button class="neumorph-btn-round text-white fs-5" title="Share Profile">
+            </a>
+
+            <button class="neumorph-btn-round text-white fs-5"
+                    title="Share Profile"
+                    onclick="toggleShareBox(event)">
                 <i class="fas fa-share-alt"></i>
             </button>
+
+            <div id="share-box" class="glass-card p-3 shadow-lg" style="display:none; position:absolute; right:0; top:70px; width:300px; z-index:999;">
+                <div class="text-white-50 small mb-3 text-center border-bottom border-secondary pb-2">Quét mã để xem Profile:</div>
+
+                <div class="text-center mb-3 bg-white p-2 rounded d-inline-block mx-auto">
+                    <img id="qr-image"
+                         class="img-fluid"
+                         style="width: 180px; height: 180px;"
+                         src="@Url.Page("/Profile", "QrImage", new { id = Model.UserId })"
+                         alt="QR Code" />
+                </div>
+
+                <div class="input-group input-group-sm mt-2">
+                    <input type="text"
+                           id="share-link"
+                           class="form-control bg-dark text-white border-secondary"
+                           readonly
+                           value="@($"{Request.Scheme}://{Request.Host}/Profile/{Model.UserId}")">
+                    <button class="btn btn-success" onclick="copyShareLink()">Copy</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -78,18 +106,14 @@
                 {
                     <div class="glass-card d-flex align-items-center p-3" style="animation-delay: @(i * 0.1)s;">
                         <div class="text-white-50 ms-2 me-4 fw-bold fs-5">0@(i++)</div>
-
                         <div class="me-4 @skill.Color fs-2" style="width: 40px; text-align: center;">
                             <i class="@skill.Icon"></i>
                         </div>
-
                         <div class="flex-grow-1">
                             <div class="text-white fw-bold fs-5">@skill.Name</div>
                             <div class="text-white-50 small">@skill.Description</div>
                         </div>
-
                         <span class="clay-badge @skill.BadgeColor ms-3 d-none d-md-block">@skill.Badge</span>
-
                         <div class="progress ms-3 d-none d-md-block" style="width: 100px; height: 6px; background: #333;">
                             <div class="progress-bar @skill.BadgeColor" style="width: @skill.Progress%"></div>
                         </div>
@@ -105,7 +129,7 @@
                 <div class="d-flex align-items-center gap-2 mb-4">
                     <div class="led-indicator"></div>
                     <span class="text-uppercase fw-bold text-success small" style="letter-spacing:2px;">Live Production</span>
-                    <span class="ms-auto text-white-50 small font-monospace">VER: 1.0.2</span>
+                    <span class="ms-auto text-white-50 small font-monospace">VER: 2.0.0</span>
                 </div>
 
                 <div class="mb-4 text-center">
@@ -119,22 +143,27 @@
                     <div class="text-white-50 small mt-2">Uptime (Render)</div>
                 </div>
 
-                <p class="text-white fs-6 fst-italic text-center" style="line-height: 1.6;">
-                    "Website này không dùng CMS.
-                </p>
-
                 <div class="mt-4 pt-3 border-top border-secondary">
-                    <div class="d-flex justify-content-between text-white-50 small mb-2">
-                        <span>Frontend:</span> <span class="text-white">Razor + Neumorphism</span>
-                    </div>
                     <div class="d-flex justify-content-between text-white-50 small mb-2">
                         <span>Database:</span> <span class="text-info">Neon (PostgreSQL)</span>
                     </div>
                     <div class="d-flex justify-content-between text-white-50 small mb-2">
-                        <span>Caching:</span> <span class="text-warning fw-bold">Redis Cloud (Singapore)</span>
+                        <span>Caching:</span> <span class="text-warning fw-bold">Redis Singapore</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-white-50 small mb-2">
+                        <span>Analytics:</span> <span class="text-success">Live Tracking</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-white-50 small mb-3">
+                        <span>PDF Engine:</span> <span class="text-danger">QuestPDF (C#)</span>
+                    </div>
+                </div>
+
+                <div class="p-3 mt-auto rounded border border-secondary" style="background: rgba(0,0,0,0.3);">
+                    <div class="d-flex justify-content-between text-white-50 small mb-2">
+                        <span>CV Downloads:</span> <span class="text-white fw-bold">@Model.ProfileUser.CvDownloadCount</span>
                     </div>
                     <div class="d-flex justify-content-between text-white-50 small">
-                        <span>Security:</span> <span class="text-danger">Identity + Google OAuth</span>
+                        <span>QR Scans:</span> <span class="text-white fw-bold">@Model.ProfileUser.QrScanCount</span>
                     </div>
                 </div>
             </div>
@@ -144,25 +173,58 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Hiệu ứng chạy số Lines of Code
+        // 1. Hiệu ứng chạy số Lines of Code
         const counter = document.getElementById("loc-counter");
         const target = @Model.LinesOfCode;
         const duration = 2000;
-        const start = 0;
-        const increment = target / (duration / 16);
+        let startTimestamp = null;
 
-        let current = start;
-        const animate = () => {
-            current += increment;
-            if (current < target) {
-                counter.innerText = Math.ceil(current).toLocaleString();
-                requestAnimationFrame(animate);
-            } else {
-                counter.innerText = target.toLocaleString();
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            counter.innerText = Math.floor(progress * target).toLocaleString();
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
             }
         };
-        animate();
+        window.requestAnimationFrame(step);
+
+        // 2. Hiệu ứng thanh Progress bar
+        document.querySelectorAll('.progress-bar').forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = "0%";
+            setTimeout(() => { bar.style.width = width; }, 300);
+        });
     });
+
+    // 3. Logic bật/tắt Share Box
+    function toggleShareBox(event) {
+        event.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+        const box = document.getElementById("share-box");
+        box.style.display = box.style.display === "none" ? "block" : "none";
+    }
+
+    function copyShareLink() {
+        const input = document.getElementById("share-link");
+        input.select();
+        navigator.clipboard.writeText(input.value).then(() => {
+            alert("Đã sao chép link profile!");
+        });
+    }
+
+    // Đóng Share Box khi click ra vùng khác trên web
+    document.addEventListener("click", function(e) {
+        const box = document.getElementById("share-box");
+        if (box && box.style.display === "block" && !box.contains(e.target)) {
+            box.style.display = "none";
+        }
+    });
+
+    // 4. Phát nhạc Intro
+    function playIntro() {
+        const audio = new Audio('/audio/intro.mp3');
+        audio.play().catch(e => console.log("Yêu cầu tương tác để phát nhạc: ", e));
+    }
 </script>
 
 <style>
@@ -462,5 +524,16 @@
             height: auto;
             padding-top: 80px;
         }
+
+        #share-box {
+            right: auto;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        /* Sửa lỗi tràn màn hình trên mobile */
+    }
+
+    .progress-bar {
+        transition: width 1.2s ease-in-out;
     }
 </style>

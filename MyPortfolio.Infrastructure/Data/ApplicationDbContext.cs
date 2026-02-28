@@ -13,5 +13,8 @@ namespace MyPortfolio.Infrastructure.Data
         }
 
         public DbSet<PortfolioItem> PortfolioItems { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<DownloadLog> DownloadLogs { get; set; }
+        public DbSet<QrScanLog> QrScanLogs { get; set; }
     }
 }

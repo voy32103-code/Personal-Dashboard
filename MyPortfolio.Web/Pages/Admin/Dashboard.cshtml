@@ -9,35 +9,83 @@
     <h2 class="glitch-text mb-5" data-text="ANALYTICS CENTER">ANALYTICS CENTER</h2>
 
     <div class="row g-4 mb-5">
-        <div class="col-md-6">
-            <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100">
+        <div class="col-md-6 col-xl-3">
+            <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100 border-start border-4 border-primary">
                 <div>
-                    <h3 class="text-white fw-bold display-4 mb-0">@Model.TotalSongs</h3>
+                    <h3 class="text-white fw-bold display-5 mb-0">@Model.TotalSongs</h3>
                     <p class="text-white-50 small text-uppercase fw-bold mb-0">Total Projects</p>
                 </div>
-                <div class="text-success display-4">
-                    <i class="fas fa-music"></i>
-                </div>
+                <div class="text-primary display-5"><i class="fas fa-music"></i></div>
             </div>
         </div>
-
-        <div class="col-md-6">
-            <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100">
+        <div class="col-md-6 col-xl-3">
+            <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100 border-start border-4 border-warning">
                 <div>
-                    <h3 class="text-white fw-bold display-4 mb-0">@Model.TotalPlays</h3>
+                    <h3 class="text-white fw-bold display-5 mb-0">@Model.TotalPlays</h3>
                     <p class="text-white-50 small text-uppercase fw-bold mb-0">Total Plays</p>
                 </div>
-                <div class="text-warning display-4">
-                    <i class="fas fa-headphones"></i>
+                <div class="text-warning display-5"><i class="fas fa-headphones"></i></div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100 border-start border-4 border-success">
+                <div>
+                    <h3 class="text-white fw-bold display-5 mb-0">@Model.TotalDownloads</h3>
+                    <p class="text-white-50 small text-uppercase fw-bold mb-0">CV Downloads</p>
                 </div>
+                <div class="text-success display-5"><i class="fas fa-file-download"></i></div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100 border-start border-4 border-info">
+                <div>
+                    <h3 class="text-white fw-bold display-5 mb-0">@Model.TotalQrScans</h3>
+                    <p class="text-white-50 small text-uppercase fw-bold mb-0">QR Scans</p>
+                </div>
+                <div class="text-info display-5"><i class="fas fa-qrcode"></i></div>
             </div>
         </div>
     </div>
 
-    <div class="glass-panel p-4">
-        <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2">Top Trending Songs</h4>
-        <div style="height: 400px; position: relative;">
+    <div class="glass-panel p-4 mb-5">
+        <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2"><i class="fas fa-fire text-warning me-2"></i>Top Trending Songs</h4>
+        <div style="height: 350px; position: relative;">
             <canvas id="playsChart"></canvas>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="glass-panel p-4 h-100">
+                <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2"><i class="fas fa-wave-square text-info me-2"></i>Profile Traffic (7 Days)</h4>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="trafficChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="glass-panel p-4 h-100">
+                <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2"><i class="fas fa-user-secret text-danger me-2"></i>Recent Visitors</h4>
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var log in Model.RecentLogs)
+                    {
+                        <div class="p-2 rounded bg-dark border-start border-3 @(log.Action.Contains("Download") ? "border-success" : "border-info")">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-white fw-bold small">@log.Action</span>
+                                <span class="text-white-50 small" style="font-size: 0.75rem;">@log.Time.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                            </div>
+                            <div class="text-secondary small mt-1">
+                                IP: <span class="text-warning visitor-ip">@log.IPAddress</span>
+                                <span class="geo-location text-info fst-italic"> (Đang tra cứu...)</span>
+                            </div>
+                        </div>
+                    }
+                    @if (!Model.RecentLogs.Any())
+                    {
+                        <div class="text-white-50 text-center fst-italic py-4">Chưa có hoạt động nào.</div>
+                    }
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -49,76 +97,115 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Lấy dữ liệu từ C# Backend truyền sang (Xử lý Null an toàn)
+
+        // =========================================
+        // 1. BIỂU ĐỒ CỘT (TOP SONGS)
+        // =========================================
         const titles = @Html.Raw(Model.SongTitles != null ? JsonSerializer.Serialize(Model.SongTitles) : "[]");
         const counts = @Html.Raw(Model.PlayCounts != null ? JsonSerializer.Serialize(Model.PlayCounts) : "[]");
 
-        const ctx = document.getElementById('playsChart').getContext('2d');
+        const ctxPlays = document.getElementById('playsChart').getContext('2d');
+        const gradientPlays = ctxPlays.createLinearGradient(0, 0, 0, 400);
+        gradientPlays.addColorStop(0, 'rgba(188, 19, 254, 0.8)'); // Tím
+        gradientPlays.addColorStop(1, 'rgba(29, 185, 84, 0.2)');  // Xanh lá nhạt
 
-        // Cấu hình Gradient màu cho đẹp (Tím -> Xanh)
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(188, 19, 254, 0.8)'); // Tím
-        gradient.addColorStop(1, 'rgba(29, 185, 84, 0.2)');  // Xanh lá nhạt
-
-        new Chart(ctx, {
+        new Chart(ctxPlays, {
             type: 'bar',
             data: {
                 labels: titles,
                 datasets: [{
                     label: 'Lượt nghe',
                     data: counts,
-                    backgroundColor: gradient,
+                    backgroundColor: gradientPlays,
                     borderColor: '#bc13fe',
                     borderWidth: 1,
                     borderRadius: 5,
-                    barPercentage: 0.6,
-                    categoryPercentage: 0.7 // Giúp cột không quá to
+                    barPercentage: 0.6
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }, // Ẩn chú thích cho gọn
-                    tooltip: {
-                        backgroundColor: 'rgba(20, 20, 20, 0.9)',
-                        titleColor: '#1db954',
-                        bodyColor: '#fff',
-                        padding: 12,
-                        cornerRadius: 8,
-                        titleFont: { size: 14, weight: 'bold' },
-                        bodyFont: { size: 14 },
-                        displayColors: false,
-                        callbacks: {
-                            label: function(context) {
-                                return context.parsed.y + ' lượt nghe';
-                            }
-                        }
-                    }
-                },
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(255,255,255,0.05)',
-                            drawBorder: false
-                        },
-                        ticks: {
-                            color: '#b3b3b3',
-                            font: { size: 12 }
-                        }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: {
-                            color: '#fff',
-                            font: { weight: 'bold', size: 11 },
-                            maxRotation: 45, // Xoay chữ nếu tên bài hát quá dài
-                            minRotation: 0
-                        }
-                    }
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#b3b3b3' } },
+                    x: { grid: { display: false }, ticks: { color: '#fff', font: { size: 10 }, maxRotation: 45 } }
                 }
             }
         });
+
+        // =========================================
+        // 2. BIỂU ĐỒ ĐƯỜNG (TRAFFIC 7 NGÀY)
+        // =========================================
+        const trafficLabels = @Html.Raw(Model.ChartLabelsJson);
+        const downloadData = @Html.Raw(Model.DownloadDataJson);
+        const scanData = @Html.Raw(Model.ScanDataJson);
+
+        const ctxTraffic = document.getElementById('trafficChart').getContext('2d');
+
+        new Chart(ctxTraffic, {
+            type: 'line',
+            data: {
+                labels: trafficLabels,
+                datasets: [
+                    {
+                        label: 'CV Downloads',
+                        data: downloadData,
+                        borderColor: '#1db954',
+                        backgroundColor: 'rgba(29, 185, 84, 0.1)',
+                        borderWidth: 3, tension: 0.4, fill: true
+                    },
+                    {
+                        label: 'QR Scans',
+                        data: scanData,
+                        borderColor: '#00d4ff',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        borderWidth: 3, tension: 0.4, fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#fff' } } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { color: '#b3b3b3', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { ticks: { color: '#b3b3b3' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                }
+            }
+        });
+        // =========================================
+        // 3. IP GEOLOCATION (BẢN ĐỒ HACKER)
+        // =========================================
+        async function fetchGeoData() {
+            const ipElements = document.querySelectorAll('.visitor-ip');
+
+            for (let el of ipElements) {
+                const ip = el.innerText.trim();
+                const geoSpan = el.nextElementSibling;
+
+                // Xử lý nếu test ở localhost (máy cá nhân)
+                if (ip === '::1' || ip === '127.0.0.1') {
+                    geoSpan.innerText = " (Localhost - Máy chủ phát triển)";
+                    continue;
+                }
+
+                try {
+                    // Gọi API miễn phí
+                    const res = await fetch(`https://ipwho.is/${ip}`);
+                    const data = await res.json();
+
+                    if (data.success) {
+                        geoSpan.innerText = ` (${data.city}, ${data.country_code} - ${data.connection.isp})`;
+                    } else {
+                        geoSpan.innerText = " (Không xác định được vị trí)";
+                    }
+                } catch (e) {
+                    geoSpan.innerText = " (Lỗi tra cứu)";
+                }
+            }
+        }
+
+        // Gọi hàm tra cứu ngay khi biểu đồ tải xong
+        fetchGeoData();
+
     });
 </script>
