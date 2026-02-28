@@ -18,10 +18,7 @@ namespace MyPortfolio.Web.Pages
     {
         public string FullName { get; set; } = "VÕ HƯNG YÊN";
 
-        // Cập nhật chức danh sát với thực tế để gây ấn tượng với nhà tuyển dụng
         public string Title { get; set; } = "SE Student @ HUFLIT • .NET Full-Stack Developer";
-
-        // Tăng số dòng code lên chút vì nãy giờ fix bug quá trời! 😆
         public int LinesOfCode { get; set; } = 15800;
         public string GithubUrl { get; set; } = "https://github.com/vohungyen";
 
@@ -53,7 +50,7 @@ namespace MyPortfolio.Web.Pages
                 new SkillItem {
                     Name = "Redis Distributed Caching",
                     Description = "Cache-Aside, Performance & Invalidation",
-                    Icon = "fas fa-bolt", // Icon tia sét thể hiện tốc độ
+                    Icon = "fas fa-bolt", 
                     Color = "text-warning",
                     Badge = "Speed",
                     BadgeColor = "bg-warning text-dark",

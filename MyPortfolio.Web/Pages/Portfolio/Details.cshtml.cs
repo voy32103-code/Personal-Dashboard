@@ -29,12 +29,12 @@ namespace MyPortfolio.Web.Pages.Portfolio
         public PortfolioItem PortfolioItem { get; set; } = default!;
 
         // 1. Lấy thông tin chi tiết bài hát (PUBLIC - Ai cũng xem được)
-        // BUG D4 FIX: Bỏ [Authorize] ở Class level, để hàm GET này public
+        //  Bỏ [Authorize] ở Class level, để hàm GET này public
         public async Task<IActionResult> OnGetAsync(int? id)
         {
             if (id == null) return NotFound();
 
-            // BUG D6 FIX: Thêm AsNoTracking() để tối ưu hiệu năng cho trang Read-Only
+            //  Thêm AsNoTracking() để tối ưu hiệu năng cho trang Read-Only
             // Nếu có bảng phụ (Artist, Category), bạn có thể chain thêm .Include(p => p.Artist) vào đây
             var portfolioItem = await _context.PortfolioItems
                 .AsNoTracking()
@@ -47,7 +47,7 @@ namespace MyPortfolio.Web.Pages.Portfolio
         }
 
         // 2. Xử lý khi bấm nút Thả Tim (PRIVATE - Phải đăng nhập)
-        // BUG D4 FIX: Gắn [Authorize] chỉ định cho riêng hàm này
+        //  Gắn [Authorize] chỉ định cho riêng hàm này
         [Authorize]
         public async Task<IActionResult> OnPostToggleHeartAsync(int id)
         {
@@ -55,7 +55,7 @@ namespace MyPortfolio.Web.Pages.Portfolio
             {
                 var item = await _context.PortfolioItems.FindAsync(id);
 
-                // BUG D5 FIX: Xử lý an toàn khi không tìm thấy Item
+                //Xử lý an toàn khi không tìm thấy Item
                 if (item == null)
                 {
                     if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -68,10 +68,10 @@ namespace MyPortfolio.Web.Pages.Portfolio
                 item.IsFavorite = !item.IsFavorite;
                 await _context.SaveChangesAsync();
 
-                // BUG D2 FIX: Xóa Cache ngay lập tức để Homepage/Library nhận dữ liệu mới
+                // Xóa Cache ngay lập tức để Homepage/Library nhận dữ liệu mới
                 await InvalidateRelevantCachesAsync();
 
-                // BUG D1 FIX: Trả về JSON nếu gọi bằng AJAX (trải nghiệm mượt, không reload trang)
+                // Trả về JSON nếu gọi bằng AJAX (trải nghiệm mượt, không reload trang)
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return new JsonResult(new { success = true, isFavorite = item.IsFavorite });
@@ -79,7 +79,7 @@ namespace MyPortfolio.Web.Pages.Portfolio
 
                 return RedirectToPage(new { id = id });
             }
-            // BUG D3 FIX: Xử lý Race Condition (2 người cùng thao tác lúc)
+            // Xử lý Race Condition (2 người cùng thao tác lúc)
             catch (DbUpdateConcurrencyException ex)
             {
                 _logger.LogWarning($"Xung đột dữ liệu khi thả tim bài hát ID {id}: {ex.Message}");
@@ -99,10 +99,7 @@ namespace MyPortfolio.Web.Pages.Portfolio
         // ==========================================
         // HELPER METHODS
         // ==========================================
-
-        /// <summary>
-        /// BUG D2 FIX: Dọn dẹp Cache liên quan
-        /// </summary>
+        // BUG D2 FIX: Dọn dẹp Cache liên quan  
         private async Task InvalidateRelevantCachesAsync()
         {
             var keysToRemove = new[]

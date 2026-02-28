@@ -14,8 +14,8 @@ namespace MyPortfolio.Web.Pages.Portfolio
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
-        private readonly ILogger<DeleteModel> _logger; //  Bổ sung Logger
-        private readonly IDistributedCache _cache;     //  Bổ sung Cache
+        private readonly ILogger<DeleteModel> _logger; 
+        private readonly IDistributedCache _cache;     
 
         public DeleteModel(
             ApplicationDbContext context,
@@ -94,10 +94,8 @@ namespace MyPortfolio.Web.Pages.Portfolio
         // HELPER METHODS
         // ==========================================
 
-        /// <summary>
-        /// Kiểm tra xem link ảnh/nhạc là link local hay external (VD: http://...)
-        /// Chỉ được phép xóa file Local (bắt đầu bằng dấu / và không chứa chữ placeholder)
-        /// </summary>
+        // Kiểm tra xem link ảnh/nhạc là link local hay external (VD: http://...)
+        // Chỉ được phép xóa file Local (bắt đầu bằng dấu / và không chứa chữ placeholder)
         private bool IsLocalFile(string? url)
         {
             if (string.IsNullOrWhiteSpace(url)) return false;
@@ -109,10 +107,7 @@ namespace MyPortfolio.Web.Pages.Portfolio
                    !url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
                    !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
         }
-
-        /// <summary>
-        ///  Xóa file với cơ chế bắt lỗi an toàn và chống Path Traversal
-        /// </summary>
+        //  Xóa file với cơ chế bắt lỗi an toàn và chống Path Traversal
         private bool TryDeleteFile(string filePath)
         {
             try
@@ -144,10 +139,7 @@ namespace MyPortfolio.Web.Pages.Portfolio
                 return false;
             }
         }
-
-        /// <summary>
-        /// Xóa các Redis Cache bị ảnh hưởng sau khi xóa bài hát
-        /// </summary>
+        // Xóa các Redis Cache bị ảnh hưởng sau khi xóa bài hát
         private async Task InvalidateRelevantCachesAsync()
         {
             var keysToRemove = new[]

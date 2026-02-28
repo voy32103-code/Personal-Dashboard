@@ -12,7 +12,7 @@ namespace MyPortfolio.Web.Pages
     {
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UserManager<IdentityUser> _userManager;
-        private readonly ILogger<LoginModel> _logger; // BUG 7: Inject Logger
+        private readonly ILogger<LoginModel> _logger; 
 
         public LoginModel(
             SignInManager<IdentityUser> signInManager,
@@ -24,7 +24,7 @@ namespace MyPortfolio.Web.Pages
             _logger = logger;
         }
 
-        // BUG 2 FIX: Validate Format & Required
+        // Validate Format & Required
         [BindProperty]
         [Required(ErrorMessage = "Vui lòng nhập Email.")]
         [EmailAddress(ErrorMessage = "Định dạng Email không hợp lệ.")]
@@ -39,10 +39,10 @@ namespace MyPortfolio.Web.Pages
         public string ErrorMessage { get; set; } = "";
         public string ReturnUrl { get; set; }
 
-        /// <summary>
-        /// BUG 6 FIX: Ngăn chặn Open Redirect (Phishing)
-        /// Chỉ cho phép chuyển hướng trong nội bộ website
-        /// </summary>
+   
+        //: Ngăn chặn Open Redirect (Phishing)
+        // Chỉ cho phép chuyển hướng trong nội bộ website
+ 
         private string ValidateReturnUrl(string returnUrl)
         {
             return (Url.IsLocalUrl(returnUrl)) ? returnUrl : Url.Content("~/");
@@ -56,7 +56,7 @@ namespace MyPortfolio.Web.Pages
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
-            // BUG 1 FIX: Đã xóa đoạn Query Database tạo Admin ở đây.
+            //  Đã xóa đoạn Query Database tạo Admin ở đây.
             // Việc khởi tạo Admin (Seeding) nên được đưa vào Program.cs chạy 1 lần lúc startup.
         }
 
@@ -73,10 +73,10 @@ namespace MyPortfolio.Web.Pages
 
             try
             {
-                // BUG 2 FIX: Trim và Lowercase
+                // Trim và Lowercase
                 var normalizedEmail = Email.Trim().ToLower();
 
-                // BUG 3 FIX: lockoutOnFailure = true (Khóa account nếu nhập sai 5 lần)
+                // lockoutOnFailure = true (Khóa account nếu nhập sai 5 lần)
                 var result = await _signInManager.PasswordSignInAsync(
                     normalizedEmail,
                     Password,
@@ -104,7 +104,7 @@ namespace MyPortfolio.Web.Pages
             }
             catch (Exception ex)
             {
-                // BUG 7 FIX: Xử lý ngoại lệ, tránh app crash
+                // Xử lý ngoại lệ, tránh app crash
                 _logger.LogError(ex, "Lỗi hệ thống khi user {Email} đăng nhập.", Email);
                 ErrorMessage = "Hệ thống đang bận. Vui lòng thử lại sau.";
                 return Page();
@@ -140,7 +140,7 @@ namespace MyPortfolio.Web.Pages
                     return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
                 }
 
-                // BUG 8 FIX: bypassTwoFactor = false để tôn trọng cài đặt 2FA
+                //  bypassTwoFactor = false để tôn trọng cài đặt 2FA
                 var result = await _signInManager.ExternalLoginSignInAsync(
                     info.LoginProvider,
                     info.ProviderKey,
@@ -164,7 +164,7 @@ namespace MyPortfolio.Web.Pages
 
                 // NẾU CHƯA CÓ TÀI KHOẢN -> TẠO MỚI / LIÊN KẾT
 
-                // BUG 4 FIX: Xử lý trường hợp Google không trả về Email
+                // Xử lý trường hợp Google không trả về Email
                 var email = info.Principal.FindFirstValue(ClaimTypes.Email);
                 if (string.IsNullOrWhiteSpace(email))
                 {
@@ -173,7 +173,7 @@ namespace MyPortfolio.Web.Pages
                     _logger.LogWarning("Google did not provide email. Using pseudo-email: {Email}", email);
                 }
 
-                // BUG 5 FIX: Double check (Race Condition) - Tránh tạo trùng lặp
+                // Double check (Race Condition) - Tránh tạo trùng lặp
                 var existingUser = await _userManager.FindByEmailAsync(email);
 
                 if (existingUser != null)
@@ -212,7 +212,7 @@ namespace MyPortfolio.Web.Pages
             }
             catch (Exception ex)
             {
-                // BUG 7 FIX: Bắt mọi lỗi từ network/API
+                //  Bắt mọi lỗi từ network/API
                 _logger.LogError(ex, "Lỗi hệ thống khi xử lý Callback từ Google.");
                 ErrorMessage = "Đã xảy ra lỗi khi kết nối với máy chủ đăng nhập.";
                 return RedirectToPage("./Login", new { ReturnUrl = returnUrl });

@@ -62,14 +62,14 @@ namespace MyPortfolio.Web.Pages.Portfolio
             var existingItem = await _context.PortfolioItems.FindAsync(PortfolioItem.Id);
             if (existingItem == null) return NotFound();
 
-            // BUG E4 FIX: Đảm bảo thư mục uploads tồn tại
+            // Đảm bảo thư mục uploads tồn tại
             var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads");
             if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
             // --- LOGIC UPLOAD ẢNH (EDIT) ---
             if (ImageUpload != null)
             {
-                // BUG E2 FIX: Validate dung lượng và định dạng file
+                // Validate dung lượng và định dạng file
                 var ext = Path.GetExtension(ImageUpload.FileName).ToLowerInvariant();
                 if (!_allowedImageExtensions.Contains(ext) || ImageUpload.Length > MAX_FILE_SIZE)
                 {
@@ -78,14 +78,14 @@ namespace MyPortfolio.Web.Pages.Portfolio
                     return Page();
                 }
 
-                // BUG E3 & E9 FIX: Xóa file cũ một cách an toàn
+                // Xóa file cũ một cách an toàn
                 if (IsLocalFile(existingItem.ImageUrl))
                 {
                     var oldPath = Path.Combine(_environment.WebRootPath, existingItem.ImageUrl.TrimStart('/'));
                     TryDeleteOldFile(oldPath);
                 }
 
-                // BUG E8 FIX: Đổi tên file để chống Path Traversal
+                // Đổi tên file để chống Path Traversal
                 var fileName = Guid.NewGuid().ToString("N") + ext;
                 var uploadPath = Path.Combine(uploadsFolder, fileName);
 
@@ -134,14 +134,14 @@ namespace MyPortfolio.Web.Pages.Portfolio
             {
                 await _context.SaveChangesAsync();
 
-                // BUG E7 FIX: Lưu log hành động Edit
+                // Lưu log hành động Edit
                 var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "Unknown User";
                 _logger.LogInformation($"📝 Bài hát ID={existingItem.Id} vừa được cập nhật bởi {userEmail} lúc {DateTime.UtcNow}");
 
-                // BUG E6 FIX: Đập vỡ các Cache liên quan
+                // Đập vỡ các Cache liên quan
                 await InvalidateRelevantCachesAsync();
             }
-            // BUG E5 FIX: Bắt lỗi Race Condition
+            // Bắt lỗi Race Condition
             catch (DbUpdateConcurrencyException ex)
             {
                 _logger.LogWarning(ex, $"Xung đột dữ liệu khi cập nhật bài hát ID {existingItem.Id}");
@@ -152,11 +152,9 @@ namespace MyPortfolio.Web.Pages.Portfolio
 
             return RedirectToPage("/Index");
         }
-
         // ==========================================
         // HELPER METHODS
         // ==========================================
-
         private bool IsLocalFile(string? url)
         {
             if (string.IsNullOrWhiteSpace(url)) return false;

@@ -138,7 +138,7 @@ namespace MyPortfolio.Web.Pages.Portfolio
             }
             catch (Exception ex)
             {
-                //  Bắt lỗi hệ thống (Database chết, mất mạng...) và Dọn dẹp file rác
+                //  Bắt lỗi hệ thống (Database chết, mất mạng) và Dọn dẹp file rác
                 _logger.LogError(ex, "Lỗi khi lưu bài hát. Hệ thống đang rollback các file đã upload...");
                 RollbackUploadedFiles(uploadedFilePaths);
 
@@ -150,10 +150,7 @@ namespace MyPortfolio.Web.Pages.Portfolio
         // ==========================================
         // HELPER METHODS
         // ==========================================
-
-        /// <summary>
-        /// BUG 7: Dọn dẹp file rác (Orphaned files) nếu quá trình lưu DB thất bại
-        /// </summary>
+        // Dọn dẹp file rác (Orphaned files) nếu quá trình lưu DB thất bại
         private void RollbackUploadedFiles(List<string> filePaths)
         {
             foreach (var path in filePaths)
@@ -165,10 +162,7 @@ namespace MyPortfolio.Web.Pages.Portfolio
                 }
             }
         }
-
-        /// <summary>
-        /// BUG 9: Xóa triệt để các Cache liên quan sau khi tạo mới
-        /// </summary>
+        /// Xóa triệt để các Cache liên quan sau khi tạo mới
         private async Task InvalidateRelevantCachesAsync()
         {
             var keysToRemove = new[]

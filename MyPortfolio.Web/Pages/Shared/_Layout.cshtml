@@ -34,11 +34,9 @@
                 <a href="/" class="nav-btn @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" && Context.Request.Query["Mode"] != "library" ? "active" : "")">
                     <i class="fas fa-home"></i> Home
                 </a>
-
                 <a href="/Profile" class="nav-btn @(ViewContext.RouteData.Values["page"]?.ToString() == "/Profile" ? "active" : "")">
                     <i class="fas fa-user-astronaut"></i> Tech Profile
                 </a>
-
                 <a href="/Portfolio/Details/4" class="nav-btn">
                     <i class="fas fa-file-code"></i> Live CV
                 </a>
@@ -88,21 +86,21 @@
                 <div class="d-flex align-items-center gap-3 mb-2">
                     <button class="btn-control" id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle"><i class="fas fa-random"></i></button>
                     <button class="btn-control" onclick="prevSong()" title="Previous"><i class="fas fa-step-backward"></i></button>
-                    <button class="btn-play-round" onclick="togglePlay()" title="Play/Pause"><i class="fas fa-play" id="play-icon"></i></button>
+                    <button class="btn-play-round" onclick="togglePlay()" title="Play/Pause (Space)"><i class="fas fa-play" id="play-icon"></i></button>
                     <button class="btn-control" onclick="nextSong()" title="Next"><i class="fas fa-step-forward"></i></button>
                     <button class="btn-control" id="repeat-btn" onclick="toggleRepeat()" title="Repeat"><i class="fas fa-redo"></i></button>
                 </div>
                 <div class="d-flex align-items-center gap-2 w-100">
                     <span id="current-time" class="small text-white-50">0:00</span>
                     <div class="progress-bar-wrapper flex-grow-1" style="height: 4px; background: #444; border-radius: 2px; cursor: pointer;">
-                        <div id="progress-bar" style="width: 0%; height: 100%; background: #1db954; border-radius: 2px;"></div>
+                        <div id="progress-bar" style="width: 0%; height: 100%; background: #1db954; border-radius: 2px; transition: width 0.1s linear;"></div>
                     </div>
                     <span id="duration-time" class="small text-white-50">0:00</span>
                 </div>
             </div>
 
             <div class="d-flex justify-content-end align-items-center" style="width: 30%;">
-                <button class="btn-control me-2" onclick="toggleMute()"><i class="fas fa-volume-up" id="volume-icon"></i></button>
+                <button class="btn-control me-2" onclick="toggleMute()" title="Mute (M)"><i class="fas fa-volume-up" id="volume-icon"></i></button>
                 <input type="range" id="volume-slider" min="0" max="1" step="0.01" class="form-range" style="width: 80px;">
             </div>
         </div>
@@ -113,10 +111,8 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"
-            integrity="sha512-lz/XU4/f4X9hVpYqV2z+k9t+2M4/30T6yfpwO/vj6D7mdPJKOQ8TGD8/joVjR48c+vJqD+0/J5XN+o4iT/wX3A=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+
     <script>
         // --- 1. KHỞI TẠO BIẾN ---
         var audio = document.getElementById("audio-player");
@@ -129,55 +125,82 @@
         var volumeSlider = document.getElementById("volume-slider");
         var volumeIcon = document.getElementById("volume-icon");
 
-        var isRepeat = false;
-        var isShuffle = false;
+        // Load settings from localStorage
+        var isRepeat = localStorage.getItem("repeatMode") === "true";
+        var isShuffle = localStorage.getItem("shuffleMode") === "true";
         var playlist = [];
         var currentIndex = -1;
         var lastVolume = 1;
+        var playTimeout = null; 
+
+        // Constant cho Prev song
+        const PREV_THRESHOLD_SECONDS = 3;
+
+        window.addEventListener("load", function() {
+            if (isRepeat) repeatBtn.style.color = "#1db954";
+            if (isShuffle) shuffleBtn.style.color = "#1db954";
+        });
 
         // ==========================================
-        // 🔥 SIGNALR SETUP
+        //  SIGNALR SETUP ( Reconnection)
         // ==========================================
-        var connection = new signalR.HubConnectionBuilder().withUrl("/musicHub").build();
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl("/musicHub")
+            .withAutomaticReconnect() // SignalR native reconnect
+            .build();
+
+        connection.onclose(async () => {
+            console.warn("❌ Connection lost, retrying...");
+            setTimeout(() => startConnection(), 5000);
+        });
+
+        async function startConnection() {
+            try {
+                await connection.start();
+                console.log("✅ Đã kết nối vào phòng nhạc!");
+            } catch (err) {
+                console.error(err);
+                setTimeout(() => startConnection(), 5000);
+            }
+        }
 
         connection.on("ReceiveMusicAction", function (action, url, time) {
-            console.log("Nhận lệnh: " + action);
             if (action === "play") {
-                if (audio.src !== url) {
-                    audio.src = url;
-                }
-                if (Math.abs(audio.currentTime - time) > 1) {
-                    audio.currentTime = time;
-                }
+                if (audio.src !== url) audio.src = url;
+                if (Math.abs(audio.currentTime - time) > 1) audio.currentTime = time;
+
                 var playPromise = audio.play();
                 if (playPromise !== undefined) {
-                    playPromise.catch(error => { console.log("Tự động phát bị chặn: " + error); });
+                    playPromise.then(() => updatePlayIcon(true))
+                               .catch(error => console.log("Tự động phát bị chặn: " + error));
                 }
-                updatePlayIcon(true);
             } else if (action === "pause") {
                 audio.pause();
                 updatePlayIcon(false);
             }
         });
 
-        connection.start().then(function () {
-            console.log("Đã kết nối vào phòng nhạc!");
-        }).catch(function (err) {
-            return console.error(err.toString());
-        });
+        startConnection();
 
         // ==========================================
-        // 🎵 LOGIC PHÁT NHẠC
+        // LOGIC PHÁT NHẠC
         // ==========================================
         function playMusic(url, title, img, desc, artist, listData) {
-            if (listData) {
-                playlist = listData.map(item => ({
-                    audioUrl: item.audioUrl || item.AudioUrl,
-                    title: item.title || item.Title,
-                    imageUrl: item.imageUrl || item.ImageUrl,
-                    artist: item.artist || item.Artist,
-                    id: item.id || item.Id
-                }));
+            // Debounce chống click đúp (Race Condition)
+            if (playTimeout) return;
+            playTimeout = setTimeout(() => { playTimeout = null; }, 500);
+
+            //  Defensive Mapping
+            if (listData && Array.isArray(listData)) {
+                playlist = listData
+                    .filter(item => item.audioUrl || item.AudioUrl)
+                    .map(item => ({
+                        audioUrl: item.audioUrl || item.AudioUrl || "",
+                        title: item.title || item.Title || "Unknown",
+                        imageUrl: item.imageUrl || item.ImageUrl || "https://via.placeholder.com/50",
+                        artist: item.artist || item.Artist || "Unknown",
+                        id: parseInt(item.id || item.Id || 0)
+                    }));
             } else if (playlist.length === 0) {
                 playlist = [{ audioUrl: url, title: title, imageUrl: img, artist: artist, id: 0 }];
             }
@@ -193,8 +216,7 @@
             loadSong(playlist[currentIndex]);
 
             if (connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("SendMusicAction", "play", url, 0)
-                    .catch(err => console.error(err.toString()));
+                connection.invoke("SendMusicAction", "play", url, 0).catch(err => console.error(err));
             }
         }
 
@@ -209,40 +231,43 @@
 
             if (audio.src !== song.audioUrl) {
                 audio.src = song.audioUrl;
+
+                // Xử lý Promise khi Play
+                var playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        updatePlayIcon(true);
+                    }).catch(error => {
+                        console.error("❌ Play failed: " + error);
+                        alert("Trình duyệt chặn tự động phát. Vui lòng bấm Play.");
+                    });
+                }
+
+                // Fetch an toàn có Timeout
+                if (song.id > 0) {
+                    fetch(`/?handler=CountPlay&id=${song.id}`, {
+                        method: 'GET',
+                        signal: AbortSignal.timeout(5000)
+                    }).catch(err => console.warn("Lỗi đếm lượt nghe: " + err));
+                }
+            } else if (audio.paused) {
                 audio.play();
                 updatePlayIcon(true);
-
-                // API Đếm lượt nghe
-                var songId = song.id || 0;
-                if (songId > 0) {
-                     fetch('/?handler=CountPlay&id=' + songId)
-                        .then(res => {
-                            if(res.ok) console.log("Đã +1 lượt nghe cho ID: " + songId);
-                        })
-                        .catch(err => console.error(err));
-                }
-
-            } else {
-                if (audio.paused) {
-                    audio.play();
-                    updatePlayIcon(true);
-                }
-            } // <-- ĐÃ KIỂM TRA KỸ DẤU ĐÓNG NGOẶC NÀY
+            }
         }
 
         // ==========================================
-        // 🎮 NÚT ĐIỀU KHIỂN
+        //  NÚT ĐIỀU KHIỂN & SỰ KIỆN
         // ==========================================
         function togglePlay() {
             if (!audio.src) return;
-
             if (audio.paused) {
                 audio.play();
                 updatePlayIcon(true);
                 if (connection.state === signalR.HubConnectionState.Connected) {
                     connection.invoke("SendMusicAction", "play", audio.src, audio.currentTime);
                 }
-            } else { // <-- Đảm bảo 'if' bên trên đã đóng '}'
+            } else {
                 audio.pause();
                 updatePlayIcon(false);
                 if (connection.state === signalR.HubConnectionState.Connected) {
@@ -253,24 +278,30 @@
 
         function updatePlayIcon(isPlaying) {
             if (isPlaying) {
-                playIcon.classList.remove("fa-play");
-                playIcon.classList.add("fa-pause");
+                playIcon.classList.replace("fa-play", "fa-pause");
             } else {
-                playIcon.classList.remove("fa-pause");
-                playIcon.classList.add("fa-play");
+                playIcon.classList.replace("fa-pause", "fa-play");
             }
+        }
+
+        // Sửa thuật toán Shuffle tránh infinite loop
+        function getNextShuffleIndex() {
+            if (playlist.length <= 1) return 0;
+            let newIndex;
+            let attempts = 0;
+            do {
+                newIndex = Math.floor(Math.random() * playlist.length);
+                attempts++;
+            } while (newIndex === currentIndex && attempts < 10);
+            return newIndex;
         }
 
         function nextSong() {
             if (playlist.length === 0) return;
             if (isShuffle) {
-                var newIndex;
-                do { newIndex = Math.floor(Math.random() * playlist.length); }
-                while (newIndex === currentIndex && playlist.length > 1);
-                currentIndex = newIndex;
+                currentIndex = getNextShuffleIndex();
             } else {
-                currentIndex++;
-                if (currentIndex >= playlist.length) currentIndex = 0;
+                currentIndex = (currentIndex + 1) % playlist.length;
             }
             loadSong(playlist[currentIndex]);
 
@@ -281,15 +312,16 @@
 
         function prevSong() {
             if (playlist.length === 0) return;
-            if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+            // Xóa số Magic
+            if (audio.currentTime > PREV_THRESHOLD_SECONDS) {
+                audio.currentTime = 0;
+                audio.play().catch(e => console.error(e));
+                return;
+            }
             if (isShuffle) {
-                var newIndex;
-                do { newIndex = Math.floor(Math.random() * playlist.length); }
-                while (newIndex === currentIndex && playlist.length > 1);
-                currentIndex = newIndex;
+                currentIndex = getNextShuffleIndex();
             } else {
-                currentIndex--;
-                if (currentIndex < 0) currentIndex = playlist.length - 1;
+                currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
             }
             loadSong(playlist[currentIndex]);
 
@@ -300,15 +332,21 @@
 
         function toggleShuffle() {
             isShuffle = !isShuffle;
+            localStorage.setItem("shuffleMode", isShuffle); 
             shuffleBtn.style.color = isShuffle ? "#1db954" : "#b3b3b3";
         }
 
         function toggleRepeat() {
             isRepeat = !isRepeat;
+            localStorage.setItem("repeatMode", isRepeat); 
             repeatBtn.style.color = isRepeat ? "#1db954" : "#b3b3b3";
         }
 
-        // --- EVENTS ---
+        // --- BẮT LỖI & SỰ KIỆN AUDIO ---
+        audio.addEventListener("error", function() {
+            console.error("❌ Audio error: " + (audio.error ? audio.error.message : "Unknown"));
+        });
+
         audio.addEventListener("timeupdate", function() {
             if (audio.duration) {
                 var percent = (audio.currentTime / audio.duration) * 100;
@@ -324,16 +362,27 @@
         audio.addEventListener("ended", function() {
             if (isRepeat) {
                 audio.currentTime = 0;
-                audio.play();
+                // Handle play error in loop
+                var playPromise = audio.play();
+                if (playPromise) {
+                    playPromise.catch(err => {
+                        console.error("Failed to replay: " + err);
+                        nextSong();
+                    });
+                }
             } else {
                 nextSong();
             }
         });
 
+        //  Xử lý click thanh Seekbar an toàn
         document.querySelector(".progress-bar-wrapper").addEventListener("click", function(e) {
-             if (audio.duration) {
+            if (!audio.src || audio.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) return;
+            if (audio.duration) {
                 var rect = this.getBoundingClientRect();
                 var percent = (e.clientX - rect.left) / rect.width;
+                percent = Math.max(0, Math.min(1, percent)); // Kẹp giới hạn 0-1
+
                 var newTime = percent * audio.duration;
                 audio.currentTime = newTime;
 
@@ -343,9 +392,13 @@
             }
         });
 
-        // --- VOLUME ---
+        // ==========================================
+        // VOLUME & UTILS
+        // ==========================================
+        // Ép kiểu dữ liệu (ParseFloat)
         function setVolume(val) {
-            audio.volume = val;
+            val = parseFloat(val);
+            audio.volume = Math.max(0, Math.min(1, val));
             updateVolumeIcon(val);
         }
 
@@ -361,22 +414,51 @@
         }
 
         function updateVolumeIcon(vol) {
+            vol = parseFloat(vol);
             volumeIcon.className = '';
-            if (vol == 0) volumeIcon.className = 'fas fa-volume-mute';
+            if (vol === 0) volumeIcon.className = 'fas fa-volume-mute';
             else if (vol < 0.5) volumeIcon.className = 'fas fa-volume-down';
             else volumeIcon.className = 'fas fa-volume-up';
         }
 
         volumeSlider.oninput = function() { setVolume(this.value); };
 
+        //  Hiển thị đúng định dạng giờ
         function formatTime(s) {
-            if (isNaN(s)) return "0:00";
-            var m = Math.floor(s / 60);
-            var sec = Math.floor(s % 60);
-            return m + ":" + (sec < 10 ? "0" : "") + sec;
+            if (isNaN(s) || s < 0) return "0:00";
+            var hours = Math.floor(s / 3600);
+            var minutes = Math.floor((s % 3600) / 60);
+            var seconds = Math.floor(s % 60);
+            var timeStr = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+            if (hours > 0) timeStr = hours + ":" + (minutes < 10 ? "0" : "") + timeStr;
+            return timeStr;
         }
 
         setVolume(1);
+
+        // ==========================================
+        // ⌨️ UPGRADE 1: KEYBOARD SHORTCUTS 
+        // ==========================================
+        document.addEventListener("keydown", function(e) {
+            // Bỏ qua nếu user đang gõ chữ vào thanh tìm kiếm hoặc form
+            if (e.target.matches("input, textarea")) return;
+
+            switch(e.code) {
+                case "Space":
+                    e.preventDefault(); // Tránh bị cuộn trang
+                    togglePlay();
+                    break;
+                case "ArrowRight":
+                    nextSong();
+                    break;
+                case "ArrowLeft":
+                    prevSong();
+                    break;
+                case "KeyM":
+                    toggleMute();
+                    break;
+            }
+        });
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
