@@ -8,6 +8,7 @@ using QRCoder; // Thư viện QR
 using QuestPDF.Fluent; // Thư viện PDF
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System.Text.Json;
 
 namespace MyPortfolio.Web.Pages
 {
@@ -50,15 +51,37 @@ namespace MyPortfolio.Web.Pages
         {
             var user = await _context.Users.FindAsync(id);
             var cachedSkills = await _cache.GetStringAsync("skills"); // BÂY GIỜ DÒNG NÀY SẼ HOẠT ĐỘNG
-            // Nếu Database trống trơn, tự động tạo 1 Profile ảo để bạn test
+                                                                      // Nếu Database trống trơn, tự động tạo 1 Profile ảo để bạn test
+            if (cachedSkills != null)
+            {
+                // Có cache → dùng luôn, không cần tạo lại
+                Skills = JsonSerializer.Deserialize<List<SkillItem>>(cachedSkills)!;
+            }
+            else
+                Skills = new List<SkillItem>
+                {
+                    new SkillItem { Name = ".NET 8 & System Architecture", Description = "Razor Pages, SignalR", Icon = "fab fa-microsoft", Color = "text-primary", Badge = "Core", BadgeColor = "bg-primary", Progress = 95 },
+                    new SkillItem { Name = "Database & EF Core", Description = "Neon PostgreSQL & LINQ", Icon = "fas fa-database", Color = "text-info", Badge = "Data", BadgeColor = "bg-info", Progress = 90 },
+                    new SkillItem { Name = "Redis Distributed Caching", Description = "Cache-Aside, Performance", Icon = "fas fa-bolt", Color = "text-warning", Badge = "Speed", BadgeColor = "bg-warning text-dark", Progress = 85 },
+                    new SkillItem { Name = "Security & OAuth 2.0", Description = "Google Auth, Anti-Traversal", Icon = "fas fa-shield-alt", Color = "text-danger", Badge = "Sec", BadgeColor = "bg-danger", Progress = 88 }
+                };
+            var options = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+            };
+            await _cache.SetStringAsync("skills", JsonSerializer.Serialize(Skills), options);
+
+
             if (user == null)
             {
+                // Chỉ seed dữ liệu mẫu 1 lần duy nhất cho id = 1
                 user = new User
                 {
                     Name = "VÕ HƯNG YÊN",
-                    Email = "contact@vohungyen.com",
-                    Phone = "0901234567",
-                    Summary = "SE Student @ HUFLIT • .NET Full-Stack Developer",
+                    Email = "voy32103gmail.com",
+                    Phone = "0355161941",
+                    Summary = "Student @ HUFLIT • .NET Full-Stack Developer",
+                    AvatarPath = "/uploads/e7d2d820-bceb-4d10-8c80-afb8d5a88220.jpg", // THÊM
                     CvDownloadCount = 0,
                     QrScanCount = 0
                 };
@@ -95,12 +118,27 @@ namespace MyPortfolio.Web.Pages
         }
 
         // --- 3. THEO DÕI LOG KHI CÓ NGƯỜI QUÉT MÃ QR ---
-        public async Task<IActionResult> OnGetScanQrAsync(int id)
+        public async Task<IActionResult> OnPostScanQrAsync(int id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
 
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+            var recentScan = await _context.QrScanLogs
+                  .Where(x => x.UserId == id && x.IPAddress == ip
+                   && x.ScannedAt > DateTime.UtcNow.AddMinutes(-1))
+                 .AnyAsync();
+            if (!recentScan)
+            {
+                _context.QrScanLogs.Add(new QrScanLog
+                {
+                    UserId = id,
+                    ScannedAt = DateTime.UtcNow,
+                    IPAddress = ip
+                });
+                user.QrScanCount++;
+                await _context.SaveChangesAsync();
+            }
 
             // Lưu lịch sử quét
             _context.QrScanLogs.Add(new QrScanLog
@@ -109,16 +147,12 @@ namespace MyPortfolio.Web.Pages
                 ScannedAt = DateTime.UtcNow,
                 IPAddress = ip
             });
-
-            user.QrScanCount++;
-            await _context.SaveChangesAsync();
-
             // Chuyển hướng người quét về trang Profile bình thường
             return RedirectToPage("/Profile", new { id = id });
         }
 
         // --- 4. TẢI CV, VẼ PDF VÀ THEO DÕI LOG DOWNLOAD ---
-        public async Task<IActionResult> OnGetDownloadCvAsync(int id)
+        public async Task<IActionResult> OnPostDownloadCvAsync(int id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();

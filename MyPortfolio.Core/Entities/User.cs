@@ -19,6 +19,7 @@ namespace MyPortfolio.Core.Entities
         public string? Email { get; set; }
         public string? Phone { get; set; }
         public string? Summary { get; set; }
+        public string? AvatarPath { get; set; } // THÊM DÒNG NÀY
 
         // Số liệu thống kê sơ bộ
         public int CvDownloadCount { get; set; }

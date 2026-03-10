@@ -11,13 +11,12 @@
 
     <div class="container-fluid h-100 position-relative d-flex align-items-end px-4 pb-5" style="z-index: 2;">
         <div class="d-flex align-items-end gap-4 header-content">
-            <div class="neumorph-avatar-container">
-                <img src="@Url.Content("~/uploads/e7d2d820-bceb-4d10-8c80-afb8d5a88220.jpg")"
-                     class="rounded-circle"
-                     onerror="this.src='https://via.placeholder.com/232?text=Avatar'"
-                     style="width: 100%; height: 100%; object-fit: cover; border: 4px solid #121212;"
-                     alt="Avatar"
-                     loading="lazy">
+            <img src="@(Model.ProfileUser.AvatarPath ?? "/img/default-avatar.png")"
+                 class="rounded-circle"
+                 onerror="this.src='https://via.placeholder.com/232?text=Avatar'"
+                 style="width: 100%; height: 100%; object-fit: cover; border: 4px solid #121212;"
+                 alt="Avatar"
+                 loading="lazy">
                 <div class="status-dot"></div>
             </div>
 
@@ -56,12 +55,14 @@
         </a>
 
         <div class="ms-auto d-flex gap-3 position-relative">
-            <a asp-page-handler="DownloadCv"
-               asp-route-id="@Model.UserId"
-               class="neumorph-btn-round text-white fs-5 text-decoration-none"
-               title="Download Live CV">
-                <i class="fas fa-download"></i>
-            </a>
+            <form method="post" asp-page-handler="DownloadCv" asp-route-id="@Model.UserId" style="display:inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit"
+                        class="neumorph-btn-round text-white fs-5"
+                        title="Download Live CV">
+                    <i class="fas fa-download"></i>
+                </button>
+            </form>
 
             <button class="neumorph-btn-round text-white fs-5"
                     title="Share Profile"
@@ -85,7 +86,7 @@
                            id="share-link"
                            class="form-control bg-dark text-white border-secondary"
                            readonly
-                           value="@($"{Request.Scheme}://{Request.Host}/Profile/{Model.UserId}")">
+                           value="@($"{Request.Scheme}://{Request.Host}/Profile?id={Model.UserId}")"
                     <button class="btn btn-success" onclick="copyShareLink()">Copy</button>
                 </div>
             </div>
