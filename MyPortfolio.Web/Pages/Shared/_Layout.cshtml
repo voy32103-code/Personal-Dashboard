@@ -37,7 +37,7 @@
                 <a href="/Profile" class="nav-btn @(ViewContext.RouteData.Values["page"]?.ToString() == "/Profile" ? "active" : "")">
                     <i class="fas fa-user-astronaut"></i> Tech Profile
                 </a>
-                <a href="/Portfolio/Details/4" class="nav-btn">
+                <a asp-page="/Portfolio/Details" asp-route-id="2" class="nav-btn">
                     <i class="fas fa-file-code"></i> Live CV
                 </a>
 

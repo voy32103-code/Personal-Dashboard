@@ -8,6 +8,7 @@ using System.Text.Json;
 
 namespace MyPortfolio.Web.Pages
 {
+    [ResponseCache(Duration = 600, Location = ResponseCacheLocation.Any)]
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _context;

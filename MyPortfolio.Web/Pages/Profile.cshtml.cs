@@ -21,7 +21,7 @@ namespace MyPortfolio.Web.Pages
         public string BadgeColor { get; set; } = string.Empty;
         public int Progress { get; set; }
     }
-
+    [ResponseCache(Duration = 600, Location = ResponseCacheLocation.Any)]
     public class ProfileModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -160,5 +160,6 @@ namespace MyPortfolio.Web.Pages
 
             return File(pdfBytes, "application/pdf", $"{user.Name.Replace(" ", "_")}_Live_CV.pdf");
         }
+
     }
 }

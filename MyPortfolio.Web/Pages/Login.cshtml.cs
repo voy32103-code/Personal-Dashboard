@@ -8,6 +8,7 @@ using System.Security.Claims;
 
 namespace MyPortfolio.Web.Pages
 {
+    [ResponseCache(Duration = 600, Location = ResponseCacheLocation.Any)]
     public class LoginModel : PageModel
     {
         private readonly SignInManager<IdentityUser> _signInManager;

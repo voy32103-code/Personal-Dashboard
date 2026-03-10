@@ -86,6 +86,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
+builder.Services.AddResponseCaching();
 // -----------------------------------------------
 
 // ==========================================
@@ -106,6 +107,7 @@ app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseResponseCaching();
 
 // Xác thực & Phân quyền phải nằm sau Routing
 app.UseAuthentication();

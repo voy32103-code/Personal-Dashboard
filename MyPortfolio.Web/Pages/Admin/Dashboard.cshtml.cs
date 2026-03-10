@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MyPortfolio.Web.Pages.Admin
 {
     [Authorize]
+    [ResponseCache(Duration = 600, Location = ResponseCacheLocation.Any)]
     public class DashboardModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -145,6 +147,13 @@ namespace MyPortfolio.Web.Pages.Admin
             public int[] Counts { get; init; } = Array.Empty<int>();
             public int TotalSongs { get; init; }
             public int TotalPlays { get; init; }
+
+            // Dữ liệu Analytics (Thêm vào để Cache luôn)
+            public int TotalDownloads { get; init; }
+            public int TotalQrScans { get; init; }
+            public string ChartLabelsJson { get; init; } = "[]";
+            public string DownloadDataJson { get; init; } = "[]";
+            public string ScanDataJson { get; init; } = "[]";
         }
     }
 }
