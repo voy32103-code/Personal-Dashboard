@@ -82,6 +82,4 @@ Author: Võ Hưng Yên
 
 Email: voy32103@gmail.com
 
-LinkedIn: [Your LinkedIn Link]
-
 Cảm ơn bạn đã ghé thăm repository này!
