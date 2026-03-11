@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // --- TÍNH NĂNG KÉO THẢ (SORTABLE) ---
     // Tìm thẻ chứa danh sách bài hát (Bạn nhớ đặt id="song-list" cho thẻ div bao quanh các bài hát ở file Index.cshtml nhé)
-    var songList = document.getElementById('song-list');
+    const songList = document.getElementById('song-list');
 
     if (songList && typeof Sortable !== 'undefined') {
         Sortable.create(songList, {
