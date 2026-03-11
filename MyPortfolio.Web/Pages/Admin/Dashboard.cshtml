@@ -8,6 +8,7 @@
 <div class="container-fluid px-4 py-5">
     <h2 class="glitch-text mb-5" data-text="ANALYTICS CENTER">ANALYTICS CENTER</h2>
 
+    @* STAT CARDS *@
     <div class="row g-4 mb-5">
         <div class="col-md-6 col-xl-3">
             <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100 border-start border-4 border-primary">
@@ -47,17 +48,87 @@
         </div>
     </div>
 
+    @* TOP TRENDING *@
     <div class="glass-panel p-4 mb-5">
-        <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2"><i class="fas fa-fire text-warning me-2"></i>Top Trending Songs</h4>
-        <div style="height: 350px; position: relative;">
-            <canvas id="playsChart"></canvas>
+        <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2">
+            <i class="fas fa-fire text-warning me-2"></i>Top Trending Projects
+        </h4>
+
+        <div class="row g-4 align-items-center">
+            @* CỘT TRÁI: DANH SÁCH (Đã được nới rộng và căn trái) *@
+            <div class="col-lg-6 order-2 order-lg-1">
+                <div class="d-flex flex-column gap-3">
+                    @for (int i = 0; i < Model.SongTitles.Length; i++)
+                    {
+                        var rank = i + 1;
+                        var title = Model.SongTitles[i];
+                        var playCount = Model.PlayCounts[i];
+                        var maxPlay = Model.PlayCounts.Length > 0 ? Model.PlayCounts[0] : 1;
+                        var barWidth = maxPlay > 0 ? (int)((double)playCount / maxPlay * 100) : 0;
+
+                        var rankColor = rank switch
+                        {
+                            1 => "text-warning",   // Vàng
+                            2 => "text-white-50",  // Bạc
+                            3 => "text-danger",    // Đồng
+                            _ => "text-white-50"
+                        };
+                        var rankIcon = rank switch
+                        {
+                            1 => "fas fa-crown",
+                            2 => "fas fa-medal",
+                            3 => "fas fa-award",
+                            _ => "fas fa-hashtag"
+                        };
+
+                        <div class="d-flex align-items-center gap-3 p-3 rounded"
+                             style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
+                            <div class="@rankColor text-center" style="width: 32px; flex-shrink: 0; font-size: 1.2rem;">
+                                @if (rank <= 3)
+                                {
+                                    <i class="@rankIcon"></i>
+                                }
+                                else
+                                {
+                                    <span class="fw-bold">@rank</span>
+                                }
+                            </div>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="text-white fw-bold text-truncate fs-6" title="@title">@title</div>
+                                <div class="mt-2" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                    <div style="width: @(barWidth)%; height: 100%; background: @(rank == 1 ? "#f9c23c" : rank == 2 ? "#b3b3b3" : rank == 3 ? "#cd7f32" : "#1db954"); border-radius: 3px; transition: width 1s ease;"></div>
+                                </div>
+                            </div>
+                            <div class="text-end" style="flex-shrink: 0; min-width: 70px;">
+                                <span class="@rankColor fw-bold fs-5">@playCount.ToString("N0")</span>
+                                <div class="text-white-50" style="font-size: 0.75rem;">plays</div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model.SongTitles.Length == 0)
+                    {
+                        <div class="text-white-50 text-center fst-italic py-4">Chưa có dữ liệu.</div>
+                    }
+                </div>
+            </div>
+
+            @* CỘT PHẢI: BIỂU ĐỒ *@
+            <div class="col-lg-6 order-1 order-lg-2">
+                <div style="height: 350px; position: relative;">
+                    <canvas id="playsChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 
+    @* TRAFFIC + RECENT VISITORS *@
     <div class="row g-4">
         <div class="col-lg-8">
             <div class="glass-panel p-4 h-100">
-                <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2"><i class="fas fa-wave-square text-info me-2"></i>Profile Traffic (7 Days)</h4>
+                <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2">
+                    <i class="fas fa-wave-square text-info me-2"></i>Profile Traffic (7 Days)
+                </h4>
                 <div style="height: 300px; position: relative;">
                     <canvas id="trafficChart"></canvas>
                 </div>
@@ -65,14 +136,18 @@
         </div>
         <div class="col-lg-4">
             <div class="glass-panel p-4 h-100">
-                <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2"><i class="fas fa-user-secret text-danger me-2"></i>Recent Visitors</h4>
+                <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2">
+                    <i class="fas fa-user-secret text-danger me-2"></i>Recent Visitors
+                </h4>
                 <div class="d-flex flex-column gap-3">
                     @foreach (var log in Model.RecentLogs)
                     {
                         <div class="p-2 rounded bg-dark border-start border-3 @(log.Action.Contains("Download") ? "border-success" : "border-info")">
                             <div class="d-flex justify-content-between">
                                 <span class="text-white fw-bold small">@log.Action</span>
-                                <span class="text-white-50 small" style="font-size: 0.75rem;">@log.Time.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                                <span class="text-white-50 small" style="font-size: 0.75rem;">
+                                    @log.Time.ToLocalTime().ToString("dd/MM HH:mm")
+                                </span>
                             </div>
                             <div class="text-secondary small mt-1">
                                 IP: <span class="text-warning visitor-ip">@log.IPAddress</span>
@@ -96,18 +171,19 @@
         referrerpolicy="no-referrer"></script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
 
         // =========================================
-        // 1. BIỂU ĐỒ CỘT (TOP SONGS)
+        // 1. BIỂU ĐỒ CỘT (TOP TRENDING)
         // =========================================
         const titles = @Html.Raw(Model.SongTitles != null ? JsonSerializer.Serialize(Model.SongTitles) : "[]");
         const counts = @Html.Raw(Model.PlayCounts != null ? JsonSerializer.Serialize(Model.PlayCounts) : "[]");
 
         const ctxPlays = document.getElementById('playsChart').getContext('2d');
         const gradientPlays = ctxPlays.createLinearGradient(0, 0, 0, 400);
-        gradientPlays.addColorStop(0, 'rgba(188, 19, 254, 0.8)'); // Tím
-        gradientPlays.addColorStop(1, 'rgba(29, 185, 84, 0.2)');  // Xanh lá nhạt
+        gradientPlays.addColorStop(0, 'rgba(249, 194, 60, 0.9)');
+        gradientPlays.addColorStop(0.5, 'rgba(188, 19, 254, 0.7)');
+        gradientPlays.addColorStop(1, 'rgba(29, 185, 84, 0.2)');
 
         new Chart(ctxPlays, {
             type: 'bar',
@@ -117,18 +193,33 @@
                     label: 'Lượt nghe',
                     data: counts,
                     backgroundColor: gradientPlays,
-                    borderColor: '#bc13fe',
+                    borderColor: '#f9c23c',
                     borderWidth: 1,
-                    borderRadius: 5,
+                    borderRadius: 6,
                     barPercentage: 0.6
                 }]
             },
             options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.parsed.y.toLocaleString()} lượt nghe`
+                        }
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#b3b3b3' } },
-                    x: { grid: { display: false }, ticks: { color: '#fff', font: { size: 10 }, maxRotation: 45 } }
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#b3b3b3', callback: v => v.toLocaleString() }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#fff', font: { size: 10 }, maxRotation: 45 }
+                    }
                 }
             }
         });
@@ -136,9 +227,9 @@
         // =========================================
         // 2. BIỂU ĐỒ ĐƯỜNG (TRAFFIC 7 NGÀY)
         // =========================================
-        const trafficLabels = @Html.Raw(Model.ChartLabelsJson);
-        const downloadData = @Html.Raw(Model.DownloadDataJson);
-        const scanData = @Html.Raw(Model.ScanDataJson);
+        const trafficLabels = @Html.Raw(string.IsNullOrEmpty(Model.ChartLabelsJson) ? "[]" : Model.ChartLabelsJson);
+        const downloadData  = @Html.Raw(string.IsNullOrEmpty(Model.DownloadDataJson) ? "[]" : Model.DownloadDataJson);
+        const scanData      = @Html.Raw(string.IsNullOrEmpty(Model.ScanDataJson) ? "[]" : Model.ScanDataJson);
 
         const ctxTraffic = document.getElementById('trafficChart').getContext('2d');
 
@@ -152,60 +243,74 @@
                         data: downloadData,
                         borderColor: '#1db954',
                         backgroundColor: 'rgba(29, 185, 84, 0.1)',
-                        borderWidth: 3, tension: 0.4, fill: true
+                        borderWidth: 3, tension: 0.4, fill: true,
+                        pointBackgroundColor: '#1db954'
                     },
                     {
                         label: 'QR Scans',
                         data: scanData,
                         borderColor: '#00d4ff',
                         backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                        borderWidth: 3, tension: 0.4, fill: true
+                        borderWidth: 3, tension: 0.4, fill: true,
+                        pointBackgroundColor: '#00d4ff'
                     }
                 ]
             },
             options: {
-                responsive: true, maintainAspectRatio: false,
+                responsive: true,
+                maintainAspectRatio: false,
                 plugins: { legend: { labels: { color: '#fff' } } },
                 scales: {
-                    y: { beginAtZero: true, ticks: { color: '#b3b3b3', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    x: { ticks: { color: '#b3b3b3' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#b3b3b3', stepSize: 1 },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: {
+                        ticks: { color: '#b3b3b3' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
                 }
             }
         });
+
         // =========================================
-        // 3. IP GEOLOCATION (BẢN ĐỒ HACKER)
+        // 3. IP GEOLOCATION (Có Cache chống Rate Limit)
         // =========================================
         async function fetchGeoData() {
             const ipElements = document.querySelectorAll('.visitor-ip');
+            const ipCache = {};
 
             for (let el of ipElements) {
-                const ip = el.innerText.trim();
+                const ip      = el.innerText.trim();
                 const geoSpan = el.nextElementSibling;
 
-                // Xử lý nếu test ở localhost (máy cá nhân)
                 if (ip === '::1' || ip === '127.0.0.1') {
-                    geoSpan.innerText = " (Localhost - Máy chủ phát triển)";
+                    geoSpan.innerText = " (Localhost)";
+                    continue;
+                }
+
+                if (ipCache[ip]) {
+                    geoSpan.innerText = ipCache[ip];
                     continue;
                 }
 
                 try {
-                    // Gọi API miễn phí
-                    const res = await fetch(`https://ipwho.is/${ip}`);
+                    const res  = await fetch(`https://ipwho.is/${ip}`);
                     const data = await res.json();
 
-                    if (data.success) {
-                        geoSpan.innerText = ` (${data.city}, ${data.country_code} - ${data.connection.isp})`;
-                    } else {
-                        geoSpan.innerText = " (Không xác định được vị trí)";
-                    }
-                } catch (e) {
+                    const locationText = data.success
+                        ? ` (${data.city}, ${data.country_code} — ${data.connection?.isp ?? ''})`
+                        : " (Không xác định)";
+
+                    geoSpan.innerText = locationText;
+                    ipCache[ip] = locationText;
+                } catch {
                     geoSpan.innerText = " (Lỗi tra cứu)";
                 }
             }
         }
 
-        // Gọi hàm tra cứu ngay khi biểu đồ tải xong
         fetchGeoData();
-
     });
 </script>
