@@ -21,8 +21,4 @@
     <ProjectReference Include="..\MyPortfolio.Core\MyPortfolio.Core.csproj" />
     <ProjectReference Include="..\MyPortfolio.Infrastructure\MyPortfolio.Infrastructure.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="wwwroot\uploads\" />
-  </ItemGroup>
 </Project>

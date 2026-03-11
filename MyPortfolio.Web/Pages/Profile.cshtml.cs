@@ -40,8 +40,6 @@ namespace MyPortfolio.Web.Pages
         public int LinesOfCode { get; set; } = 15800;
         public string GithubUrl { get; set; } = "https://github.com/vohungyen";
         public List<SkillItem> Skills { get; set; } = new();
-
-        // Giữ lại các biến này để file HTML giao diện (Razor) của bạn không bị vỡ lỗi
         public string FullName => ProfileUser?.Name ?? "VÕ HƯNG YÊN";
         public string Title => ProfileUser?.Summary ?? "SE Student @ HUFLIT • .NET Full-Stack Developer";
         public int UserId => ProfileUser?.Id ?? 1;
@@ -50,8 +48,8 @@ namespace MyPortfolio.Web.Pages
         public async Task<IActionResult> OnGetAsync(int id = 1) // Tạm mặc định lấy ID 1
         {
             var user = await _context.Users.FindAsync(id);
-            var cachedSkills = await _cache.GetStringAsync("skills"); // BÂY GIỜ DÒNG NÀY SẼ HOẠT ĐỘNG
-                                                                      // Nếu Database trống trơn, tự động tạo 1 Profile ảo để bạn test
+            var cachedSkills = await _cache.GetStringAsync("skills"); 
+                                                                      
             if (cachedSkills != null)
             {
                 // Có cache → dùng luôn, không cần tạo lại
@@ -90,15 +88,6 @@ namespace MyPortfolio.Web.Pages
             }
 
             ProfileUser = user;
-
-            // Nạp danh sách kỹ năng
-            Skills = new List<SkillItem>
-            {
-                new SkillItem { Name = ".NET 8 & System Architecture", Description = "Razor Pages, SignalR", Icon = "fab fa-microsoft", Color = "text-primary", Badge = "Core", BadgeColor = "bg-primary", Progress = 95 },
-                new SkillItem { Name = "Database & EF Core", Description = "Neon PostgreSQL & LINQ", Icon = "fas fa-database", Color = "text-info", Badge = "Data", BadgeColor = "bg-info", Progress = 90 },
-                new SkillItem { Name = "Redis Distributed Caching", Description = "Cache-Aside, Performance", Icon = "fas fa-bolt", Color = "text-warning", Badge = "Speed", BadgeColor = "bg-warning text-dark", Progress = 85 },
-                new SkillItem { Name = "Security & OAuth 2.0", Description = "Google Auth, Anti-Traversal", Icon = "fas fa-shield-alt", Color = "text-danger", Badge = "Sec", BadgeColor = "bg-danger", Progress = 88 }
-            };
 
             return Page();
         }

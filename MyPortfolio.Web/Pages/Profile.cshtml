@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "Digital Profile";
 }
-
 <div class="profile-header position-relative aurora-bg">
     <div class="aurora-blob blob-1"></div>
     <div class="aurora-blob blob-2"></div>
@@ -11,12 +10,14 @@
 
     <div class="container-fluid h-100 position-relative d-flex align-items-end px-4 pb-5" style="z-index: 2;">
         <div class="d-flex align-items-end gap-4 header-content">
-            <img src="@(Model.ProfileUser.AvatarPath ?? "/img/default-avatar.png")"
-                 class="rounded-circle"
-                 onerror="this.src='https://via.placeholder.com/232?text=Avatar'"
-                 style="width: 100%; height: 100%; object-fit: cover; border: 4px solid #121212;"
-                 alt="Avatar"
-                 loading="lazy">
+
+            <div class="neumorph-avatar-container">
+                <img src="@(Model.ProfileUser.AvatarPath ?? "/uploads/KAN_1196.jpg")"
+                     class="rounded-circle"
+                     onerror="this.src='https://via.placeholder.com/232?text=Avatar'"
+                     style="width: 100%; height: 100%; object-fit: cover fill;"
+                     alt="Avatar"
+                     loading="lazy">
                 <div class="status-dot"></div>
             </div>
 
@@ -51,7 +52,9 @@
         </button>
 
         <a href="@Model.GithubUrl" target="_blank" rel="noopener noreferrer" class="neumorph-btn-pill text-white fw-bold text-uppercase text-decoration-none">
-            <i class="fab fa-github me-2"></i> Follow Github
+            <i class="fab fa-github me-2">
+                https://github.com/voy32103-code
+            </i> Follow Github
         </a>
 
         <div class="ms-auto d-flex gap-3 position-relative">
