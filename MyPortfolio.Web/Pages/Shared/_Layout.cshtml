@@ -36,36 +36,39 @@
                 </a>
                 <a href="/Profile" class="nav-btn @(ViewContext.RouteData.Values["page"]?.ToString() == "/Profile" ? "active" : "")">
                     <i class="fas fa-user-astronaut"></i> Tech Profile
-                </a>
-                <a asp-page="/Portfolio/Details" asp-route-id="2" class="nav-btn">
-                    <i class="fas fa-file-code"></i> Live CV
-                </a>
+                </a>            
+                    <form method="post" action="/Profile?handler=DownloadCv&id=" style="margin:0;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="nav-btn w-100 text-start border-0 bg-transparent">
+                            <i class="fas fa-file-code"></i> Live CV
+                        </button>
+                    </form>
 
-                <div class="mt-4 mb-2 px-3 text-uppercase text-white-50 small fw-bold" style="letter-spacing: 1px;">Library</div>
+                    <div class="mt-4 mb-2 px-3 text-uppercase text-white-50 small fw-bold" style="letter-spacing: 1px;">Library</div>
 
-                <a href="/?Mode=library" class="nav-btn @(Context.Request.Query["Mode"] == "library" ? "active" : "")">
-                    <i class="fas fa-heart text-danger"></i> Liked Songs
-                </a>
-
-                @if (User.Identity.IsAuthenticated)
-                {
-                    <a href="/Admin/Dashboard" class="neumorph-btn btn-sm rounded-pill text-decoration-none py-2 mb-2 w-100 text-warning">
-                        <i class="fas fa-chart-line me-2"></i> Dashboard
+                    <a href="/?Mode=library" class="nav-btn @(Context.Request.Query["Mode"] == "library" ? "active" : "")">
+                        <i class="fas fa-heart text-danger"></i> Liked Songs
                     </a>
-                    <div class="mt-4 p-3 glass-panel text-center">
-                        <div class="small text-white-50 mb-2">Admin Panel</div>
-                        <a href="/Portfolio/Create" class="neumorph-btn btn-sm rounded-pill text-decoration-none py-2 mb-2 w-100">
-                            <i class="fas fa-plus me-2"></i> New Project
+
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <a href="/Admin/Dashboard" class="neumorph-btn btn-sm rounded-pill text-decoration-none py-2 mb-2 w-100 text-warning">
+                            <i class="fas fa-chart-line me-2"></i> Dashboard
                         </a>
-                        <a href="/Login?handler=Logout" class="text-danger small text-decoration-none hover-underline">Logout</a>
-                    </div>
-                }
-                else
-                {
-                    <a href="/Login" class="nav-btn mt-auto">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </a>
-                }
+                        <div class="mt-4 p-3 glass-panel text-center">
+                            <div class="small text-white-50 mb-2">Admin Panel</div>
+                            <a href="/Portfolio/Create" class="neumorph-btn btn-sm rounded-pill text-decoration-none py-2 mb-2 w-100">
+                                <i class="fas fa-plus me-2"></i> New Project
+                            </a>
+                            <a href="/Login?handler=Logout" class="text-danger small text-decoration-none hover-underline">Logout</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <a href="/Login" class="nav-btn mt-auto">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    }
             </div>
         </div>
 
@@ -75,7 +78,9 @@
 
         <div class="player-bar">
             <div class="d-flex align-items-center gap-3" style="width: 30%;">
-                <img id="current-img" src="https://cdn-icons-png.flaticon.com/512/174/174872.png" style="width: 50px; height: 50px; border-radius: 8px; display: none; object-fit: cover; box-shadow: 0 0 10px rgba(0,0,0,0.5);" />
+                <img id="current-img"
+                     src="https://cdn-icons-png.flaticon.com/512/174/174872.png"
+                     style="width: 50px; height: 50px; border-radius: 8px; display: none; object-fit: cover; box-shadow: 0 0 10px rgba(0,0,0,0.5);" />
                 <div id="song-info" style="display: none;">
                     <div id="current-title" class="text-white fw-bold small">Chọn bài hát...</div>
                     <div id="current-desc" class="text-white-50 small" style="font-size: 0.7rem;">...</div>
@@ -112,40 +117,58 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
-    <script>
-        // --- 1. KHỞI TẠO BIẾN ---
-        var audio = document.getElementById("audio-player");
-        var playIcon = document.getElementById("play-icon");
-        var progressBar = document.getElementById("progress-bar");
-        var currentTimeLabel = document.getElementById("current-time");
-        var durationTimeLabel = document.getElementById("duration-time");
-        var repeatBtn = document.getElementById("repeat-btn");
-        var shuffleBtn = document.getElementById("shuffle-btn");
-        var volumeSlider = document.getElementById("volume-slider");
-        var volumeIcon = document.getElementById("volume-icon");
 
-        // Load settings from localStorage
-        var isRepeat = localStorage.getItem("repeatMode") === "true";
-        var isShuffle = localStorage.getItem("shuffleMode") === "true";
-        var playlist = [];
+    <script>
+        // ==========================================
+        // KHỞI TẠO BIẾN
+        // ==========================================
+        var audio        = document.getElementById("audio-player");
+        var playIcon     = document.getElementById("play-icon");
+        var progressBar  = document.getElementById("progress-bar");
+        var currentTimeLabel  = document.getElementById("current-time");
+        var durationTimeLabel = document.getElementById("duration-time");
+        var repeatBtn    = document.getElementById("repeat-btn");
+        var shuffleBtn   = document.getElementById("shuffle-btn");
+        var volumeSlider = document.getElementById("volume-slider");
+        var volumeIcon   = document.getElementById("volume-icon");
+
+        var isRepeat   = localStorage.getItem("repeatMode") === "true";
+        var isShuffle  = localStorage.getItem("shuffleMode") === "true";
+        var playlist   = [];
         var currentIndex = -1;
         var lastVolume = 1;
-        var playTimeout = null; 
+        var playTimeout = null;
 
-        // Constant cho Prev song
         const PREV_THRESHOLD_SECONDS = 3;
 
-        window.addEventListener("load", function() {
-            if (isRepeat) repeatBtn.style.color = "#1db954";
+        // Fix 2: Gộp 2 window.addEventListener("load") thành 1
+        window.addEventListener("load", function () {
+            if (isRepeat)  repeatBtn.style.color  = "#1db954";
             if (isShuffle) shuffleBtn.style.color = "#1db954";
+            volumeSlider.value = 1;
+            setVolume(1);
         });
 
         // ==========================================
-        //  SIGNALR SETUP ( Reconnection)
+        // FIX 1: HELPER LẤY ANTIFORGERY TOKEN TỪ COOKIE
+        // Dùng cho Layout vì không có @Html.AntiForgeryToken() inline
+        // Cần thêm options.Cookie.Name = "XSRF-TOKEN" vào Program.cs
+        // ==========================================
+        function getAntiforgeryToken() {
+            var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (tokenInput) return tokenInput.value;
+
+            // Fallback: đọc từ cookie nếu không có input trong trang
+            var match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+            return match ? decodeURIComponent(match[1]) : "";
+        }
+
+        // ==========================================
+        // SIGNALR SETUP
         // ==========================================
         var connection = new signalR.HubConnectionBuilder()
             .withUrl("/musicHub")
-            .withAutomaticReconnect() // SignalR native reconnect
+            .withAutomaticReconnect()
             .build();
 
         connection.onclose(async () => {
@@ -170,8 +193,9 @@
 
                 var playPromise = audio.play();
                 if (playPromise !== undefined) {
-                    playPromise.then(() => updatePlayIcon(true))
-                               .catch(error => console.log("Tự động phát bị chặn: " + error));
+                    playPromise
+                        .then(() => updatePlayIcon(true))
+                        .catch(error => console.log("Tự động phát bị chặn: " + error));
                 }
             } else if (action === "pause") {
                 audio.pause();
@@ -185,20 +209,19 @@
         // LOGIC PHÁT NHẠC
         // ==========================================
         function playMusic(url, title, img, desc, artist, listData) {
-            // Debounce chống click đúp (Race Condition)
+            // Debounce chống click đúp
             if (playTimeout) return;
             playTimeout = setTimeout(() => { playTimeout = null; }, 500);
 
-            //  Defensive Mapping
             if (listData && Array.isArray(listData)) {
                 playlist = listData
                     .filter(item => item.audioUrl || item.AudioUrl)
                     .map(item => ({
                         audioUrl: item.audioUrl || item.AudioUrl || "",
-                        title: item.title || item.Title || "Unknown",
+                        title:    item.title    || item.Title    || "Unknown",
                         imageUrl: item.imageUrl || item.ImageUrl || "https://via.placeholder.com/50",
-                        artist: item.artist || item.Artist || "Unknown",
-                        id: parseInt(item.id || item.Id || 0)
+                        artist:   item.artist   || item.Artist   || "Unknown",
+                        id:       parseInt(item.id || item.Id || 0)
                     }));
             } else if (playlist.length === 0) {
                 playlist = [{ audioUrl: url, title: title, imageUrl: img, artist: artist, id: 0 }];
@@ -223,29 +246,32 @@
             if (!song || !song.audioUrl) return;
 
             document.getElementById("current-title").innerText = song.title;
-            document.getElementById("current-desc").innerText = song.artist || "Unknown";
-            document.getElementById("current-img").src = song.imageUrl;
-            document.getElementById("current-img").style.display = "block";
-            document.getElementById("song-info").style.display = "block";
+            document.getElementById("current-desc").innerText  = song.artist || "Unknown";
+            document.getElementById("current-img").src         = song.imageUrl;
+            document.getElementById("current-img").style.display  = "block";
+            document.getElementById("song-info").style.display    = "block";
 
             if (audio.src !== song.audioUrl) {
                 audio.src = song.audioUrl;
 
-                // Xử lý Promise khi Play
                 var playPromise = audio.play();
                 if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        updatePlayIcon(true);
-                    }).catch(error => {
-                        console.error("❌ Play failed: " + error);
-                        alert("Trình duyệt chặn tự động phát. Vui lòng bấm Play.");
-                    });
+                    playPromise
+                        .then(() => updatePlayIcon(true))
+                        .catch(error => {
+                            console.error("❌ Play failed: " + error);
+                            alert("Trình duyệt chặn tự động phát. Vui lòng bấm Play.");
+                        });
                 }
 
-                // Fetch an toàn có Timeout
+                // Fix 1: Đếm lượt nghe bằng POST thay vì GET
                 if (song.id > 0) {
                     fetch(`/?handler=CountPlay&id=${song.id}`, {
-                        method: 'GET',
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': getAntiforgeryToken()
+                        },
                         signal: AbortSignal.timeout(5000)
                     }).catch(err => console.warn("Lỗi đếm lượt nghe: " + err));
                 }
@@ -256,7 +282,7 @@
         }
 
         // ==========================================
-        //  NÚT ĐIỀU KHIỂN & SỰ KIỆN
+        // NÚT ĐIỀU KHIỂN
         // ==========================================
         function togglePlay() {
             if (!audio.src) return;
@@ -283,7 +309,6 @@
             }
         }
 
-        // Sửa thuật toán Shuffle tránh infinite loop
         function getNextShuffleIndex() {
             if (playlist.length <= 1) return 0;
             let newIndex;
@@ -297,11 +322,9 @@
 
         function nextSong() {
             if (playlist.length === 0) return;
-            if (isShuffle) {
-                currentIndex = getNextShuffleIndex();
-            } else {
-                currentIndex = (currentIndex + 1) % playlist.length;
-            }
+            currentIndex = isShuffle
+                ? getNextShuffleIndex()
+                : (currentIndex + 1) % playlist.length;
             loadSong(playlist[currentIndex]);
 
             if (connection.state === signalR.HubConnectionState.Connected) {
@@ -311,17 +334,14 @@
 
         function prevSong() {
             if (playlist.length === 0) return;
-            // Xóa số Magic
             if (audio.currentTime > PREV_THRESHOLD_SECONDS) {
                 audio.currentTime = 0;
                 audio.play().catch(e => console.error(e));
                 return;
             }
-            if (isShuffle) {
-                currentIndex = getNextShuffleIndex();
-            } else {
-                currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
-            }
+            currentIndex = isShuffle
+                ? getNextShuffleIndex()
+                : (currentIndex - 1 + playlist.length) % playlist.length;
             loadSong(playlist[currentIndex]);
 
             if (connection.state === signalR.HubConnectionState.Connected) {
@@ -331,22 +351,24 @@
 
         function toggleShuffle() {
             isShuffle = !isShuffle;
-            localStorage.setItem("shuffleMode", isShuffle); 
+            localStorage.setItem("shuffleMode", isShuffle);
             shuffleBtn.style.color = isShuffle ? "#1db954" : "#b3b3b3";
         }
 
         function toggleRepeat() {
             isRepeat = !isRepeat;
-            localStorage.setItem("repeatMode", isRepeat); 
+            localStorage.setItem("repeatMode", isRepeat);
             repeatBtn.style.color = isRepeat ? "#1db954" : "#b3b3b3";
         }
 
-        // --- BẮT LỖI & SỰ KIỆN AUDIO ---
-        audio.addEventListener("error", function() {
+        // ==========================================
+        // SỰ KIỆN AUDIO
+        // ==========================================
+        audio.addEventListener("error", function () {
             console.error("❌ Audio error: " + (audio.error ? audio.error.message : "Unknown"));
         });
 
-        audio.addEventListener("timeupdate", function() {
+        audio.addEventListener("timeupdate", function () {
             if (audio.duration) {
                 var percent = (audio.currentTime / audio.duration) * 100;
                 progressBar.style.width = percent + "%";
@@ -354,14 +376,13 @@
             }
         });
 
-        audio.addEventListener("loadedmetadata", function() {
+        audio.addEventListener("loadedmetadata", function () {
             durationTimeLabel.innerText = formatTime(audio.duration);
         });
 
-        audio.addEventListener("ended", function() {
+        audio.addEventListener("ended", function () {
             if (isRepeat) {
                 audio.currentTime = 0;
-                // Handle play error in loop
                 var playPromise = audio.play();
                 if (playPromise) {
                     playPromise.catch(err => {
@@ -374,14 +395,11 @@
             }
         });
 
-        //  Xử lý click thanh Seekbar an toàn
-        document.querySelector(".progress-bar-wrapper").addEventListener("click", function(e) {
+        document.querySelector(".progress-bar-wrapper").addEventListener("click", function (e) {
             if (!audio.src || audio.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) return;
             if (audio.duration) {
-                var rect = this.getBoundingClientRect();
-                var percent = (e.clientX - rect.left) / rect.width;
-                percent = Math.max(0, Math.min(1, percent)); // Kẹp giới hạn 0-1
-
+                var rect    = this.getBoundingClientRect();
+                var percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                 var newTime = percent * audio.duration;
                 audio.currentTime = newTime;
 
@@ -392,26 +410,19 @@
         });
 
         // ==========================================
-        // VOLUME & UTILS
+        // VOLUME
         // ==========================================
-        // Ép kiểu dữ liệu (ParseFloat)
-               function setVolume(val) {
+        function setVolume(val) {
             val = parseFloat(val);
             if (isNaN(val)) val = 1;
-
             var finalVol = Math.max(0, Math.min(1, val));
-
             audio.volume = finalVol;
             volumeSlider.value = finalVol;
-
-            // ✅ FIX: cập nhật lastVolume nếu không phải đang mute
-            if (finalVol > 0) {
-                lastVolume = finalVol;
-            }
-
+            if (finalVol > 0) lastVolume = finalVol;
             updateVolumeIcon(finalVol);
         }
-               function toggleMute() {
+
+        function toggleMute() {
             if (audio.volume > 0) {
                 lastVolume = audio.volume;
                 setVolume(0);
@@ -420,21 +431,21 @@
             }
         }
 
-
         function updateVolumeIcon(vol) {
             vol = parseFloat(vol);
-            volumeIcon.className = '';
-            if (vol === 0) volumeIcon.className = 'fas fa-volume-mute';
-            else if (vol < 0.5) volumeIcon.className = 'fas fa-volume-down';
-            else volumeIcon.className = 'fas fa-volume-up';
+            if (vol === 0)       volumeIcon.className = 'fas fa-volume-mute';
+            else if (vol < 0.5)  volumeIcon.className = 'fas fa-volume-down';
+            else                 volumeIcon.className = 'fas fa-volume-up';
         }
 
-        volumeSlider.oninput = function() { setVolume(this.value); };
+        volumeSlider.oninput = function () { setVolume(this.value); };
 
-        //  Hiển thị đúng định dạng giờ
+        // ==========================================
+        // UTILS
+        // ==========================================
         function formatTime(s) {
             if (isNaN(s) || s < 0) return "0:00";
-            var hours = Math.floor(s / 3600);
+            var hours   = Math.floor(s / 3600);
             var minutes = Math.floor((s % 3600) / 60);
             var seconds = Math.floor(s % 60);
             var timeStr = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
@@ -442,52 +453,35 @@
             return timeStr;
         }
 
-               window.addEventListener("load", function () {
-            if (isRepeat) repeatBtn.style.color = "#1db954";
-            if (isShuffle) shuffleBtn.style.color = "#1db954";
-
-            volumeSlider.value = 1;   // ✅ FIX
-            setVolume(1);
-        });
-
         // ==========================================
-        // ⌨️ UPGRADE 1: KEYBOARD SHORTCUTS 
+        // KEYBOARD SHORTCUTS
         // ==========================================
-              document.addEventListener("keydown", function (e) {
-
+        document.addEventListener("keydown", function (e) {
             if (e.target.matches("input, textarea")) return;
 
             switch (e.code) {
-
                 case "Space":
                     e.preventDefault();
                     if (!audio.src) return;
-
                     togglePlay();
                     break;
-
                 case "ArrowRight":
                     if (e.target.id === "volume-slider") return;
                     e.preventDefault();
                     nextSong();
                     break;
-
                 case "ArrowLeft":
                     if (e.target.id === "volume-slider") return;
                     e.preventDefault();
                     prevSong();
                     break;
-
                 case "KeyM":
                     toggleMute();
                     break;
-
-                // 🔥 BONUS: tăng giảm âm lượng bằng phím mũi tên lên/xuống
                 case "ArrowUp":
                     e.preventDefault();
                     setVolume(audio.volume + 0.05);
                     break;
-
                 case "ArrowDown":
                     e.preventDefault();
                     setVolume(audio.volume - 0.05);

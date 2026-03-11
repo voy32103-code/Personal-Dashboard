@@ -2,16 +2,25 @@
 @model IndexModel
 @using System.Text.Json
 @{
-    ViewData["Title"] = "Thư Viện Dự Án";
-    // Serialize danh sách bài hát thành JSON để nạp vào Playlist khi bấm Play
+    ViewData["Title"] = ViewData["Title"] ?? "Thư Viện Dự Án";
+
+    // Serialize toàn bộ danh sách 1 lần duy nhất — KHÔNG đặt trong vòng lặp
     var allSongsJson = JsonSerializer.Serialize(Model.Projects.Select(p => new
     {
         audioUrl = p.AudioUrl,
         title = p.Title,
         imageUrl = p.ImageUrl,
         artist = p.Artist,
-        id = p.Id // Thêm ID để đếm lượt nghe
+        id = p.Id
     }));
+}
+
+@* Thông báo lỗi từ DB *@
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger mx-4 mt-3" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+    </div>
 }
 
 <div class="p-4 sticky-top" style="z-index: 10; background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);">
@@ -22,7 +31,9 @@
                    class="neumorph-input w-100 ps-5" placeholder="Tìm kiếm dự án, công nghệ...">
             <input type="hidden" name="Mode" value="@Model.Mode" />
         </div>
-        <button class="neumorph-btn rounded-circle" style="width: 48px; height: 48px;"><i class="fas fa-filter"></i></button>
+        <button class="neumorph-btn rounded-circle" style="width: 48px; height: 48px;">
+            <i class="fas fa-filter"></i>
+        </button>
     </form>
 </div>
 
@@ -33,20 +44,22 @@
         @foreach (var item in Model.Projects)
         {
             <div class="col" data-id="@item.Id">
-                <div class="glass-panel glass-card-hover p-3 h-100 d-flex flex-column position-relative"
+                @* Dùng data-* attributes để bảo mật chống XSS và tránh lỗi dấu nháy *@
+                <div class="glass-panel glass-card-hover p-3 h-100 d-flex flex-column position-relative js-play-card"
                      style="cursor: grab;"
-                     onclick='playMusic(
-                          "@item.AudioUrl",
-                          "@item.Title",
-                          "@item.ImageUrl",
-                          "@item.Description",
-                          "@item.Artist",
-                          @Html.Raw(allSongsJson)
-                      )'>
+                     data-audio="@item.AudioUrl"
+                     data-title="@item.Title"
+                     data-image="@item.ImageUrl"
+                     data-description="@item.Description"
+                     data-artist="@item.Artist"
+                     data-id="@item.Id">
 
                     <div class="position-relative mb-3">
                         <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://cdn-icons-png.flaticon.com/512/174/174872.png" : item.ImageUrl)"
-                             class="w-100 rounded shadow-lg" style="aspect-ratio: 1/1; object-fit: cover;">
+                             class="w-100 rounded shadow-lg"
+                             style="aspect-ratio: 1/1; object-fit: cover;"
+                             loading="lazy"
+                             alt="@item.Title">
 
                         <span class="clay-badge bg-primary position-absolute bottom-0 start-0 m-2 shadow-sm" style="font-size: 0.7rem;">
                             @item.Artist
@@ -61,7 +74,9 @@
                         <p class="text-white-50 small mt-1 text-truncate">@item.Description</p>
                     </div>
 
-                    <button type="button" class="btn position-absolute top-0 end-0 m-2 text-white stop-prop"
+                    @* Nút Thả tim *@
+                    <button type="button"
+                            class="btn position-absolute top-0 end-0 m-2 text-white stop-prop"
                             onclick="toggleHeart(event, @item.Id, this)">
                         @if (item.IsFavorite)
                         {
@@ -73,11 +88,18 @@
                         }
                     </button>
 
+                    @* Chức năng Admin *@
                     @if (User.Identity.IsAuthenticated)
                     {
                         <div class="mt-3 d-flex justify-content-between align-items-center stop-prop">
-                            <a asp-page="./Portfolio/Edit" asp-route-id="@item.Id" class="text-muted small hover-white text-decoration-none"><i class="fas fa-pen"></i></a>
-                            <a asp-page="./Portfolio/Delete" asp-route-id="@item.Id" class="text-muted small hover-white text-decoration-none"><i class="fas fa-trash"></i></a>
+                            <a asp-page="./Portfolio/Edit" asp-route-id="@item.Id"
+                               class="text-muted small hover-white text-decoration-none">
+                                <i class="fas fa-pen"></i>
+                            </a>
+                            <a asp-page="./Portfolio/Delete" asp-route-id="@item.Id"
+                               class="text-muted small hover-white text-decoration-none">
+                                <i class="fas fa-trash"></i>
+                            </a>
                         </div>
                     }
                 </div>
@@ -90,45 +112,75 @@
 
 @section Scripts {
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            console.log("Trang Index đã tải xong!");
+        // Inject toàn bộ danh sách bài hát 1 lần duy nhất
+        const allSongs = @Html.Raw(allSongsJson);
+
+        document.addEventListener("DOMContentLoaded", function () {
 
             // --- 1. KÍCH HOẠT KÉO THẢ (SORTABLE) ---
             var el = document.getElementById('song-list');
             if (el && typeof Sortable !== 'undefined') {
                 Sortable.create(el, {
                     animation: 150,
-                    ghostClass: 'sortable-ghost', // Class CSS khi đang kéo (cần định nghĩa trong CSS nếu muốn đẹp)
+                    ghostClass: 'sortable-ghost',
                     onEnd: function (evt) {
-                        console.log("Đã kéo bài hát từ vị trí " + evt.oldIndex + " sang " + evt.newIndex);
-                        // Tại đây bạn có thể gọi API để lưu vị trí mới nếu cần
+                        console.log(`Kéo từ vị trí ${evt.oldIndex} → ${evt.newIndex}`);
                     }
                 });
-                console.log("--> Sortable đã kích hoạt trên #song-list");
-            } else {
-                console.warn("Không tìm thấy #song-list hoặc thư viện Sortable chưa tải.");
             }
 
-            // --- 2. CHẶN CLICK LAN TRUYỀN (STOP PROPAGATION) ---
-            // Để khi bấm vào nút Tim/Edit/Delete thì không bị phát nhạc
-            document.querySelectorAll('.stop-prop').forEach(el => {
-                el.addEventListener('click', e => {
-                    e.stopPropagation(); // Ngăn sự kiện click lan ra thẻ cha
+            // --- 2. CHẶN CLICK LAN TRUYỀN (Nút Edit/Delete/Heart) ---
+            document.querySelectorAll('.stop-prop').forEach(function (stopEl) {
+                stopEl.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+            });
+
+            // --- 3. GẮN SỰ KIỆN PHÁT NHẠC ---
+            document.querySelectorAll('.js-play-card').forEach(function (card) {
+                card.addEventListener('click', function () {
+                    // Lấy dữ liệu từ data-* attributes
+                    var audio  = this.dataset.audio;
+                    var title  = this.dataset.title;
+                    var image  = this.dataset.image;
+                    var desc   = this.dataset.description;
+                    var artist = this.dataset.artist;
+                    var id     = parseInt(this.dataset.id);
+
+                    // Gọi hàm playMusic từ _Layout
+                    if (typeof playMusic === 'function') {
+                        playMusic(audio, title, image, desc, artist, allSongs);
+                    }
+
+                    // Gọi API đếm lượt nghe
+                    var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                    var token = tokenInput ? tokenInput.value : "";
+
+                    fetch(`?handler=CountPlay&id=${id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': token
+                        }
+                    })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.success) console.log(`▶ Đang phát: "${title}" — Lượt nghe: ${d.newCount ?? 'Đã tăng'}`);
+                    })
+                    .catch(err => console.error("Lỗi đếm lượt nghe:", err));
                 });
             });
         });
 
-        // --- 3. HÀM THẢ TIM (AJAX) ---
+        // --- 4. HÀM THẢ TIM (AJAX) ---
         function toggleHeart(e, id, btn) {
-            e.stopPropagation(); // Chặn lan truyền sự kiện
-            e.preventDefault();  // Chặn hành vi mặc định
+            e.stopPropagation();
+            e.preventDefault();
 
             var icon = btn.querySelector('i');
-            // Lấy token bảo mật từ thẻ input ẩn
             var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
             var token = tokenInput ? tokenInput.value : "";
 
-            // Gọi API Backend
             fetch(`?handler=ToggleHeart&id=${id}`, {
                 method: 'POST',
                 headers: {
@@ -138,8 +190,7 @@
             })
             .then(r => r.json())
             .then(d => {
-                if(d.success) {
-                    // Đổi icon dựa trên trạng thái mới
+                if (d.success) {
                     icon.className = d.isFavorite ? "fas fa-heart text-danger heart-anim" : "far fa-heart";
                 } else {
                     alert("Có lỗi xảy ra, vui lòng thử lại!");

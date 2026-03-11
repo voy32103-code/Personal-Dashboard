@@ -19,7 +19,6 @@ namespace MyPortfolio.Web.Pages.Portfolio
         // Danh sách đuôi file được phép upload 
         private readonly string[] _allowedImageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
         private readonly string[] _allowedAudioExtensions = { ".mp3", ".wav", ".ogg" };
-
         public CreateModel(
             ApplicationDbContext context,
             IWebHostEnvironment environment,

@@ -87,6 +87,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 builder.Services.AddResponseCaching();
+builder.Services.AddAntiforgery(options => {
+    options.Cookie.Name = "XSRF-TOKEN";
+    options.HeaderName = "RequestVerificationToken";
+});
 // -----------------------------------------------
 
 // ==========================================
