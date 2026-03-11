@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using MyPortfolio.Core.Entities;
 using MyPortfolio.Infrastructure.Data;
 using Microsoft.Extensions.Caching.Distributed;
-using QRCoder;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -23,8 +22,6 @@ namespace MyPortfolio.Web.Pages
         public int Progress { get; set; }
     }
 
-    // Fix: XÓA [ResponseCache] ở class level vì nó cache cả ảnh QR
-    // và trả nhầm image/png cho request trang HTML
     public class ProfileModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -48,38 +45,25 @@ namespace MyPortfolio.Web.Pages
 
         // ================================================================
         // 1. LOAD TRANG PROFILE
-        // Cache HTML response riêng cho handler này — không ảnh hưởng các handler khác
         // ================================================================
-        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Client, NoStore = false)]
         public async Task<IActionResult> OnGetAsync(int id = 1)
         {
-            // Chỉ cho phép id = 1 — tránh spam tạo user rác
             if (id != 1) return NotFound();
 
             var user = await _context.Users.FindAsync(id);
-
-            // --- CACHE-ASIDE CHO SKILLS ---
             var cachedSkills = await _cache.GetStringAsync("skills");
 
             if (cachedSkills != null)
             {
-                // Cache hit → dùng luôn
-                Skills = JsonSerializer.Deserialize<List<SkillItem>>(cachedSkills)
-                         ?? BuildDefaultSkills();
+                Skills = JsonSerializer.Deserialize<List<SkillItem>>(cachedSkills) ?? BuildDefaultSkills();
             }
             else
             {
-                // Cache miss → tạo data rồi lưu vào Redis
                 Skills = BuildDefaultSkills();
-
-                var cacheOptions = new DistributedCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
-                };
+                var cacheOptions = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) };
                 await _cache.SetStringAsync("skills", JsonSerializer.Serialize(Skills), cacheOptions);
             }
 
-            // --- SEED USER NẾU CHƯA CÓ ---
             if (user == null)
             {
                 user = new User
@@ -100,71 +84,16 @@ namespace MyPortfolio.Web.Pages
             return Page();
         }
 
-        // Helper tách riêng để dễ bảo trì
         private static List<SkillItem> BuildDefaultSkills() => new()
         {
-            new SkillItem { Name = ".NET 8 & System Architecture", Description = "Razor Pages, SignalR",        Icon = "fab fa-microsoft",  Color = "text-primary", Badge = "Core",  BadgeColor = "bg-primary",           Progress = 95 },
-            new SkillItem { Name = "Database & EF Core",           Description = "Neon PostgreSQL & LINQ",      Icon = "fas fa-database",   Color = "text-info",    Badge = "Data",  BadgeColor = "bg-info",              Progress = 90 },
-            new SkillItem { Name = "Redis Distributed Caching",    Description = "Cache-Aside, Performance",    Icon = "fas fa-bolt",       Color = "text-warning", Badge = "Speed", BadgeColor = "bg-warning text-dark", Progress = 85 },
-            new SkillItem { Name = "Security & OAuth 2.0",         Description = "Google Auth, Anti-Traversal", Icon = "fas fa-shield-alt", Color = "text-danger",  Badge = "Sec",   BadgeColor = "bg-danger",            Progress = 88 }
+            new SkillItem { Name = ".NET 8 & System Architecture", Description = "Razor Pages, SignalR", Icon = "fab fa-microsoft", Color = "text-primary", Badge = "Core", BadgeColor = "bg-primary", Progress = 95 },
+            new SkillItem { Name = "Database & EF Core", Description = "Neon PostgreSQL & LINQ", Icon = "fas fa-database", Color = "text-info", Badge = "Data", BadgeColor = "bg-info", Progress = 90 },
+            new SkillItem { Name = "Redis Distributed Caching", Description = "Cache-Aside, Performance", Icon = "fas fa-bolt", Color = "text-warning", Badge = "Speed", BadgeColor = "bg-warning text-dark", Progress = 85 },
+            new SkillItem { Name = "Security & OAuth 2.0", Description = "Google Auth, Anti-Traversal", Icon = "fas fa-shield-alt", Color = "text-danger", Badge = "Sec", BadgeColor = "bg-danger", Progress = 88 }
         };
 
         // ================================================================
-        // 2. TẠO ẢNH QR CODE
-        // NoStore = true — không bao giờ cache response ảnh này
-        // ================================================================
-        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-        public IActionResult OnGetQrImage(int id)
-        {
-            Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
-            Response.Headers.Append("Pragma", "no-cache");
-            Response.Headers.Append("Expires", "0");
-
-            var scanUrl = $"{Request.Scheme}://{Request.Host}/Profile?handler=ScanQr&id={id}";
-
-            using var qrGenerator = new QRCodeGenerator();
-            var qrData = qrGenerator.CreateQrCode(scanUrl, QRCodeGenerator.ECCLevel.Q);
-            var qrCode = new PngByteQRCode(qrData);
-            var qrBytes = qrCode.GetGraphic(20);
-
-            return File(qrBytes, "image/png");
-        }
-        // ================================================================
-        // 3. LOG KHI NGƯỜI DÙNG QUÉT MÃ QR
-        // Dùng GET vì điện thoại quét QR không thể POST.
-        // Chống đếm trùng bằng rate-limit theo IP (1 lần / phút).
-        // ================================================================
-        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-        public async Task<IActionResult> OnGetScanQrAsync(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
-
-            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
-
-            var recentScan = await _context.QrScanLogs
-                .Where(x => x.UserId == id
-                         && x.IPAddress == ip
-                         && x.ScannedAt > DateTime.UtcNow.AddMinutes(-1))
-                .AnyAsync();
-
-            if (!recentScan)
-            {
-                _context.QrScanLogs.Add(new QrScanLog
-                {
-                    UserId = id,
-                    ScannedAt = DateTime.UtcNow,
-                    IPAddress = ip
-                });
-                user.QrScanCount++;
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToPage("/Profile", new { id = id });
-        }
-
-        // ================================================================
-        // 4. DOWNLOAD CV — tạo PDF động từ DB
+        // 2. DOWNLOAD CV TĨNH 
         // ================================================================
         public async Task<IActionResult> OnPostDownloadCvAsync(int id)
         {
@@ -174,6 +103,7 @@ namespace MyPortfolio.Web.Pages
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
             var agent = Request.Headers["User-Agent"].ToString();
 
+            // Ghi Log vào DB
             _context.DownloadLogs.Add(new DownloadLog
             {
                 UserId = id,
@@ -185,34 +115,17 @@ namespace MyPortfolio.Web.Pages
             user.CvDownloadCount++;
             await _context.SaveChangesAsync();
 
-            var pdfBytes = Document.Create(container =>
+            // Đọc file tĩnh PDF (HungYen_CV.pdf) từ thư mục wwwroot/uploads
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "HungYen_CV.pdf");
+
+            if (!System.IO.File.Exists(filePath))
             {
-                container.Page(page =>
-                {
-                    page.Margin(40);
-                    page.Content().Column(col =>
-                    {
-                        col.Item().Text(user.Name)
-                            .FontSize(28).Bold().FontColor(Colors.Green.Darken2);
+                return NotFound("Không tìm thấy file CV.");
+            }
 
-                        col.Item().Text($"Email: {user.Email}").FontSize(14);
-                        col.Item().Text($"Phone: {user.Phone}").FontSize(14);
+            var pdfBytes = await System.IO.File.ReadAllBytesAsync(filePath);
 
-                        col.Item().PaddingTop(20)
-                            .Text("Professional Summary")
-                            .FontSize(18).Bold().FontColor(Colors.Grey.Darken3);
-
-                        col.Item().Text(user.Summary ?? string.Empty).FontSize(12);
-
-                        col.Item().PaddingTop(30)
-                            .Text($"System generated on {DateTime.Now:dd/MM/yyyy}")
-                            .FontSize(10).Italic().FontColor(Colors.Grey.Medium);
-                    });
-                });
-            }).GeneratePdf();
-
-            var fileName = $"{user.Name.Replace(" ", "_")}_Live_CV.pdf";
-            return File(pdfBytes, "application/pdf", fileName);
+            return File(pdfBytes, "application/pdf", "CV_FULLSTACKDEVELOPER_VOHUNGYEN.pdf");
         }
     }
 }

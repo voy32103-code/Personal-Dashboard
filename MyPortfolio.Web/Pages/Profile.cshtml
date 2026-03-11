@@ -12,7 +12,7 @@
         <div class="d-flex align-items-end gap-4 header-content">
 
             <div class="neumorph-avatar-container">
-                <img src="@(Model.ProfileUser.AvatarPath ?? "/uploads/KAN_1196.jpg")"
+                <img src="@(Model.ProfileUser.AvatarPath ?? "/imgs/myimg.jpg")"
                      class="rounded-circle"
                      onerror="this.src='https://via.placeholder.com/232?text=Avatar'"
                      style="width: 100%; height: 100%; object-fit: cover fill;"
@@ -69,27 +69,19 @@
             <button class="neumorph-btn-round text-white fs-5"
                     title="Share Profile"
                     onclick="toggleShareBox(event)">
-                <i class="fas fa-share-alt"></i>
+                <i class="fas fa-qrcode"></i>
             </button>
 
-            <div id="share-box" class="glass-card p-3 shadow-lg" style="display:none; position:absolute; right:0; top:70px; width:300px; z-index:999;">
-                <div class="text-white-50 small mb-3 text-center border-bottom border-secondary pb-2">Quét mã để xem Profile:</div>
-
-                <div class="text-center mb-3 bg-white p-2 rounded d-inline-block mx-auto">
-                    <img id="qr-image"
-                         class="img-fluid"
-                         style="width: 180px; height: 180px;"
-                         src="/Profile?handler=QrImage&id=1"
-                         alt="QR Code" />
+            <div id="share-box" class="glass-card p-3 shadow-lg" style="display:none; position:absolute; right:0; top:70px; width:240px; z-index:999;">
+                <div class="text-white-50 small mb-2 text-center border-bottom border-secondary pb-2">
+                    <i class="fas fa-mobile-alt me-1"></i> Quét mã xem CV
                 </div>
 
-                <div class="input-group input-group-sm mt-2">
-                    <input type="text"
-                           id="share-link"
-                           class="form-control bg-dark text-white border-secondary"
-                           readonly
-                           value="@($"{Request.Scheme}://{Request.Host}/Profile?id={Model.UserId}")"
-                    <button class="btn btn-success" onclick="copyShareLink()">Copy</button>
+                <div class="text-center bg-white p-2 rounded d-inline-block mx-auto w-100">
+                    <img id="qr-image"
+                         class="img-fluid"
+                         src="/img/my-qr.png"
+                         alt="QR Code CV Võ Hưng Yên" />
                 </div>
             </div>
         </div>
@@ -165,8 +157,17 @@
                     <div class="d-flex justify-content-between text-white-50 small mb-2">
                         <span>CV Downloads:</span> <span class="text-white fw-bold">@Model.ProfileUser.CvDownloadCount</span>
                     </div>
-                    <div class="d-flex justify-content-between text-white-50 small">
-                        <span>QR Scans:</span> <span class="text-white fw-bold">@Model.ProfileUser.QrScanCount</span>
+                    <div id="share-box" class="glass-card p-3 shadow-lg" style="display:none; position:absolute; right:0; top:70px; width:220px; z-index:999;">
+                        <div class="text-white-50 small mb-2 text-center border-bottom border-secondary pb-2">
+                            <i class="fas fa-mobile-alt me-1"></i> Quét mã xem CV
+                        </div>
+
+                        <div class="text-center bg-white p-2 rounded d-inline-block mx-auto w-100">
+                            <img id="qr-image"
+                                 class="img-fluid"
+                                 src="/imgs/my-qr.png"
+                                 alt="QR Code CV Võ Hưng Yên" />
+                        </div>
                     </div>
                 </div>
             </div>
