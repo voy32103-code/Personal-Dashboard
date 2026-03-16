@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'myportfolio'
+    # Scrape metrics từ ứng dụng .NET 8 đang chạy
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['host.docker.internal:5020'] # Thay số port này bằng http port của .NET app của bạn khi chạy local

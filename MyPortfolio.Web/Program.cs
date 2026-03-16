@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MyPortfolio.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
@@ -6,6 +6,11 @@ using MyPortfolio.Web.Hubs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.HttpOverrides;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,9 +45,17 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
     options.MultipartBodyLengthLimit = 100 * 1024 * 1024; // 100MB
 });
 
-// 1.4. Đăng ký SignalR & Razor Pages
+// 1.4. Đăng ký SignalR, Razor Pages, Web API & Swagger
 builder.Services.AddSignalR();
 builder.Services.AddRazorPages();
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// 1.5. Đăng ký FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // 1.5. Đăng ký Google Authentication
 builder.Services.AddAuthentication()
@@ -93,6 +106,22 @@ builder.Services.AddAntiforgery(options => {
 });
 // -----------------------------------------------
 
+// 1.7. CẤU HÌNH OPENTELEMETRY (Metrics & Tracing)
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService("MyPortfolio.Web"))
+    .WithTracing(tracing =>
+    {
+        tracing.AddAspNetCoreInstrumentation();
+        tracing.AddHttpClientInstrumentation();
+    })
+    .WithMetrics(metrics =>
+    {
+        metrics.AddAspNetCoreInstrumentation();
+        metrics.AddHttpClientInstrumentation();
+        metrics.AddRuntimeInstrumentation();
+        metrics.AddPrometheusExporter(); // Khôi phục dòng này
+    });
+
 // ==========================================
 // 2. BUILD ỨNG DỤNG (Chốt sổ Services)
 // ==========================================
@@ -113,11 +142,22 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseResponseCaching();
 
+// Cấu hình Swagger UI ở môi trường Development
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// Map Prometheus scraping endpoint
+app.MapPrometheusScrapingEndpoint();
+
 // Xác thực & Phân quyền phải nằm sau Routing
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
+app.MapControllers(); // Map các Controller của Web API
 app.MapHub<MusicHub>("/musicHub");
 
 // Tự động Migrate Database

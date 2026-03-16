@@ -35,7 +35,7 @@ namespace MyPortfolio.Web.Pages
         }
 
         public User ProfileUser { get; set; } = default!;
-        public int LinesOfCode { get; set; } = 15800;
+        public int LinesOfCode { get; set; } = 2700;
         public string GithubUrl { get; set; } = "https://github.com/vohungyen";
         public List<SkillItem> Skills { get; set; } = new();
 
