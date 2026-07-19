@@ -378,10 +378,11 @@
         });
 
         audio.addEventListener("timeupdate", function () {
-            if (audio.duration) {
+            currentTimeLabel.innerText = formatTime(audio.currentTime);
+            if (audio.duration && !isNaN(audio.duration) && audio.duration !== Infinity) {
                 var percent = (audio.currentTime / audio.duration) * 100;
                 progressBar.style.width = percent + "%";
-                currentTimeLabel.innerText = formatTime(audio.currentTime);
+                durationTimeLabel.innerText = formatTime(audio.duration);
             }
             // Phát sự kiện để đồng bộ lời nhạc (LRC)
             var event = new CustomEvent('audioTimeUpdate', {
@@ -391,7 +392,15 @@
         });
 
         audio.addEventListener("loadedmetadata", function () {
-            durationTimeLabel.innerText = formatTime(audio.duration);
+            if (audio.duration && !isNaN(audio.duration) && audio.duration !== Infinity) {
+                durationTimeLabel.innerText = formatTime(audio.duration);
+            }
+        });
+
+        audio.addEventListener("durationchange", function () {
+            if (audio.duration && !isNaN(audio.duration) && audio.duration !== Infinity) {
+                durationTimeLabel.innerText = formatTime(audio.duration);
+            }
         });
 
         audio.addEventListener("ended", function () {
@@ -426,12 +435,14 @@
         // ==========================================
         // VOLUME
         // ==========================================
-        function setVolume(val) {
+        function setVolume(val, updateSliderElement = true) {
             val = parseFloat(val);
             if (isNaN(val)) val = 0.5;
             var finalVol = Math.max(0, Math.min(1, val));
             audio.volume = finalVol;
-            volumeSlider.value = finalVol;
+            if (updateSliderElement) {
+                volumeSlider.value = finalVol;
+            }
             if (finalVol > 0) {
                 lastVolume = finalVol;
                 localStorage.setItem("playerVolume", finalVol);
@@ -444,9 +455,9 @@
         function toggleMute() {
             if (audio.volume > 0) {
                 lastVolume = audio.volume;
-                setVolume(0);
+                setVolume(0, true);
             } else {
-                setVolume(lastVolume || 0.5);
+                setVolume(lastVolume || 0.5, true);
             }
         }
 
@@ -457,7 +468,12 @@
             else                 volumeIcon.className = 'fas fa-volume-up';
         }
 
-        volumeSlider.oninput = function () { setVolume(this.value); };
+        volumeSlider.addEventListener('input', function () {
+            setVolume(this.value, false);
+        });
+        volumeSlider.addEventListener('change', function () {
+            setVolume(this.value, false);
+        });
 
         // ==========================================
         // UTILS
