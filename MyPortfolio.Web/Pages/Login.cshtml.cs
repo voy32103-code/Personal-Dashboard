@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -8,12 +8,13 @@ using System.Security.Claims;
 
 namespace MyPortfolio.Web.Pages
 {
-    [ResponseCache(Duration = 600, Location = ResponseCacheLocation.Any)]
+    // Login page KHÔNG ĐƯỢC cache — CSRF token phải luôn fresh
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public class LoginModel : PageModel
     {
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UserManager<IdentityUser> _userManager;
-        private readonly ILogger<LoginModel> _logger; 
+        private readonly ILogger<LoginModel> _logger;
 
         public LoginModel(
             SignInManager<IdentityUser> signInManager,
@@ -25,7 +26,6 @@ namespace MyPortfolio.Web.Pages
             _logger = logger;
         }
 
-        // Validate Format & Required
         [BindProperty]
         [Required(ErrorMessage = "Vui lòng nhập Email.")]
         [EmailAddress(ErrorMessage = "Định dạng Email không hợp lệ.")]
@@ -35,10 +35,14 @@ namespace MyPortfolio.Web.Pages
         [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
         public string Password { get; set; } = "";
 
-        public IList<AuthenticationScheme> ExternalLogins { get; set; }
+        // M-7: Cho phép user chọn thay vì hardcode isPersistent = true
+        [BindProperty]
+        public bool RememberMe { get; set; } = false;
+
+        public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
 
         public string ErrorMessage { get; set; } = "";
-        public string ReturnUrl { get; set; }
+        public string ReturnUrl { get; set; } = "/";
 
    
         //: Ngăn chặn Open Redirect (Phishing)
@@ -81,7 +85,7 @@ namespace MyPortfolio.Web.Pages
                 var result = await _signInManager.PasswordSignInAsync(
                     normalizedEmail,
                     Password,
-                    isPersistent: true,
+                    isPersistent: RememberMe,
                     lockoutOnFailure: true);
 
                 if (result.Succeeded)
@@ -220,8 +224,8 @@ namespace MyPortfolio.Web.Pages
             }
         }
 
-        // --- 5. ĐĂNG XUẤT ---
-        public async Task<IActionResult> OnGetLogoutAsync()
+        // --- 5. ĐĂNG XUẤT (POST để chống CSRF - GET logout có thể bị khai thác) ---
+        public async Task<IActionResult> OnPostLogoutAsync()
         {
             await _signInManager.SignOutAsync();
             _logger.LogInformation("User logged out.");

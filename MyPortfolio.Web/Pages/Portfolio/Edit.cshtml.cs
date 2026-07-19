@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MyPortfolio.Core.Entities;
 using MyPortfolio.Infrastructure.Data;
@@ -7,31 +7,28 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
+using MyPortfolio.Web.Infrastructure;
 
 namespace MyPortfolio.Web.Pages.Portfolio
 {
-    [Authorize]
+    [Authorize(Policy = "OwnerOnly")]
     public class EditModel : PageModel
     {
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _environment;
         private readonly IDistributedCache _cache;
         private readonly ILogger<EditModel> _logger;
-
-        private readonly string[] _allowedImageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-        private readonly string[] _allowedAudioExtensions = { ".mp3", ".wav", ".ogg" };
-        private const long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+        private readonly IFileUploadService _fileUploadService;
 
         public EditModel(
             ApplicationDbContext context,
-            IWebHostEnvironment environment,
             IDistributedCache cache,
-            ILogger<EditModel> logger)
+            ILogger<EditModel> logger,
+            IFileUploadService fileUploadService)
         {
             _context = context;
-            _environment = environment;
             _cache = cache;
             _logger = logger;
+            _fileUploadService = fileUploadService;
         }
 
         [BindProperty]
@@ -62,65 +59,43 @@ namespace MyPortfolio.Web.Pages.Portfolio
             var existingItem = await _context.PortfolioItems.FindAsync(PortfolioItem.Id);
             if (existingItem == null) return NotFound();
 
-            // Đảm bảo thư mục uploads tồn tại
-            var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads");
-            if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+            string? oldImagePath = null;
+            string? newImagePath = null;
+            string? oldAudioPath = null;
+            string? newAudioPath = null;
 
-            // --- LOGIC UPLOAD ẢNH (EDIT) ---
+            // H-3: Dùng IFileUploadService — không còn copy-paste logic từ Create
             if (ImageUpload != null)
             {
-                // Validate dung lượng và định dạng file
-                var ext = Path.GetExtension(ImageUpload.FileName).ToLowerInvariant();
-                if (!_allowedImageExtensions.Contains(ext) || ImageUpload.Length > MAX_FILE_SIZE)
+                var (success, path, error) = await _fileUploadService.SaveImageAsync(ImageUpload);
+                if (!success)
                 {
-                    ModelState.AddModelError("ImageUpload", "File ảnh không hợp lệ hoặc vượt quá 10MB.");
-                    PortfolioItem = existingItem; // Phục hồi data hiển thị
-                    return Page();
-                }
-
-                // Xóa file cũ một cách an toàn
-                if (IsLocalFile(existingItem.ImageUrl))
-                {
-                    var oldPath = Path.Combine(_environment.WebRootPath, existingItem.ImageUrl.TrimStart('/'));
-                    TryDeleteOldFile(oldPath);
-                }
-
-                // Đổi tên file để chống Path Traversal
-                var fileName = Guid.NewGuid().ToString("N") + ext;
-                var uploadPath = Path.Combine(uploadsFolder, fileName);
-
-                using (var fileStream = new FileStream(uploadPath, FileMode.CreateNew))
-                {
-                    await ImageUpload.CopyToAsync(fileStream);
-                }
-                existingItem.ImageUrl = "/uploads/" + fileName;
-            }
-
-            // --- LOGIC UPLOAD AUDIO (EDIT) ---
-            if (AudioUpload != null)
-            {
-                var ext = Path.GetExtension(AudioUpload.FileName).ToLowerInvariant();
-                if (!_allowedAudioExtensions.Contains(ext) || AudioUpload.Length > MAX_FILE_SIZE)
-                {
-                    ModelState.AddModelError("AudioUpload", "File audio không hợp lệ hoặc vượt quá 10MB.");
+                    ModelState.AddModelError("ImageUpload", error!);
                     PortfolioItem = existingItem;
                     return Page();
                 }
+                oldImagePath = existingItem.ImageUrl;
+                newImagePath = path;
+                existingItem.ImageUrl = path!;
+            }
 
-                if (IsLocalFile(existingItem.AudioUrl))
+            // H-3: Dùng IFileUploadService cho audio
+            if (AudioUpload != null)
+            {
+                var (success, path, error) = await _fileUploadService.SaveAudioAsync(AudioUpload);
+                if (!success)
                 {
-                    var oldPath = Path.Combine(_environment.WebRootPath, existingItem.AudioUrl.TrimStart('/'));
-                    TryDeleteOldFile(oldPath);
+                    ModelState.AddModelError("AudioUpload", error!);
+                    if (newImagePath != null)
+                    {
+                        _fileUploadService.DeleteFile(newImagePath);
+                    }
+                    PortfolioItem = existingItem;
+                    return Page();
                 }
-
-                var audioName = Guid.NewGuid().ToString("N") + ext;
-                var audioPath = Path.Combine(uploadsFolder, audioName);
-
-                using (var stream = new FileStream(audioPath, FileMode.CreateNew))
-                {
-                    await AudioUpload.CopyToAsync(stream);
-                }
-                existingItem.AudioUrl = "/uploads/" + audioName;
+                oldAudioPath = existingItem.AudioUrl;
+                newAudioPath = path;
+                existingItem.AudioUrl = path!;
             }
 
             // 2. Chỉ cập nhật các trường được phép (Tránh đè CreatedDate hoặc PlayCount)
@@ -134,59 +109,44 @@ namespace MyPortfolio.Web.Pages.Portfolio
             {
                 await _context.SaveChangesAsync();
 
-                // Lưu log hành động Edit
-                var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "Unknown User";
-                _logger.LogInformation($"📝 Bài hát ID={existingItem.Id} vừa được cập nhật bởi {userEmail} lúc {DateTime.UtcNow}");
+                // Chỉ xóa file cũ vật lý KHI DB đã lưu thành công
+                if (oldImagePath != null) _fileUploadService.DeleteFile(oldImagePath);
+                if (oldAudioPath != null) _fileUploadService.DeleteFile(oldAudioPath);
 
-                // Đập vỡ các Cache liên quan
+                var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "Unknown User";
+                _logger.LogInformation("PortfolioItem {ItemId} updated by {UserEmail}",
+                    existingItem.Id, userEmail);
+
                 await InvalidateRelevantCachesAsync();
             }
-            // Bắt lỗi Race Condition
-            catch (DbUpdateConcurrencyException ex)
+            catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"Xung đột dữ liệu khi cập nhật bài hát ID {existingItem.Id}");
-                ModelState.AddModelError("", "Bài hát này vừa được thay đổi bởi một người khác. Vui lòng tải lại trang.");
+                // Nếu DB save thất bại, dọn dẹp các file mới vừa upload để tránh rác
+                if (newImagePath != null) _fileUploadService.DeleteFile(newImagePath);
+                if (newAudioPath != null) _fileUploadService.DeleteFile(newAudioPath);
+
+                if (ex is DbUpdateConcurrencyException)
+                {
+                    _logger.LogWarning(ex, "Concurrency conflict on PortfolioItem {ItemId}", existingItem.Id);
+                    ModelState.AddModelError("", "Bài hát này vừa được thay đổi bởi một người khác. Vui lòng tải lại trang.");
+                }
+                else
+                {
+                    _logger.LogError(ex, "Database update failed on PortfolioItem {ItemId}", existingItem.Id);
+                    ModelState.AddModelError("", "Đã xảy ra lỗi hệ thống khi cập nhật dữ liệu. Vui lòng thử lại.");
+                }
+
                 PortfolioItem = existingItem;
                 return Page();
             }
 
             return RedirectToPage("/Index");
         }
-        // ==========================================
-        // HELPER METHODS
-        // ==========================================
-        private bool IsLocalFile(string? url)
-        {
-            if (string.IsNullOrWhiteSpace(url)) return false;
-            if (url.Contains("no-image.png", StringComparison.OrdinalIgnoreCase)) return false;
 
-            return url.StartsWith("/") &&
-                   !url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-                   !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private void TryDeleteOldFile(string filePath)
-        {
-            try
-            {
-                var uploadsDir = Path.Combine(_environment.WebRootPath, "uploads");
-                var fullPath = Path.GetFullPath(filePath);
-                var fullUploadsDir = Path.GetFullPath(uploadsDir);
-
-                if (fullPath.StartsWith(fullUploadsDir, StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(fullPath))
-                {
-                    System.IO.File.Delete(fullPath);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Không thể xóa file cũ ({filePath}): {ex.Message}");
-            }
-        }
-
+        // H-1: Dùng CacheKeys — fix bug cache không được invalidate
         private async Task InvalidateRelevantCachesAsync()
         {
-            var keysToRemove = new[] { "home_projects_normal_none", "home_projects_library_none", "dashboard_stats" };
+            var keysToRemove = new[] { CacheKeys.HomeProjectsNormal, CacheKeys.HomeProjectsLibrary, CacheKeys.DashboardStats };
             foreach (var key in keysToRemove)
             {
                 try { await _cache.RemoveAsync(key); }

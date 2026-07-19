@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MyPortfolio.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MyPortfolio.Web.Pages.Admin
 {
-    [Authorize]
+    [Authorize(Policy = "OwnerOnly")]
     // Fix: XÓA [ResponseCache] ở class level — tương tự bug ở ProfileModel
     // Dashboard là trang admin, không nên cache response HTTP
     // Dùng Redis cache cho data thay thế

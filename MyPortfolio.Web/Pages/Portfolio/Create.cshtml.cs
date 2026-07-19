@@ -1,34 +1,32 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MyPortfolio.Core.Entities;
 using MyPortfolio.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using MyPortfolio.Web.Infrastructure;
 
 namespace MyPortfolio.Web.Pages.Portfolio
 {
-    [Authorize]
+    [Authorize(Policy = "OwnerOnly")]
     public class CreateModel : PageModel
     {
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _environment;
         private readonly IDistributedCache _cache;
-        private readonly ILogger<CreateModel> _logger; // Dùng để log lỗi 
+        private readonly ILogger<CreateModel> _logger;
+        private readonly IFileUploadService _fileUploadService; // H-3: DI thay vì duplicate logic
 
-        // Danh sách đuôi file được phép upload 
-        private readonly string[] _allowedImageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-        private readonly string[] _allowedAudioExtensions = { ".mp3", ".wav", ".ogg" };
         public CreateModel(
             ApplicationDbContext context,
-            IWebHostEnvironment environment,
             IDistributedCache cache,
-            ILogger<CreateModel> logger)
+            ILogger<CreateModel> logger,
+            IFileUploadService fileUploadService)
         {
             _context = context;
-            _environment = environment;
             _cache = cache;
             _logger = logger;
+            _fileUploadService = fileUploadService;
         }
 
         [BindProperty]
@@ -45,130 +43,75 @@ namespace MyPortfolio.Web.Pages.Portfolio
             return Page();
         }
 
-        // Bổ sung CancellationToken để xử lý Timeout 
         public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
         {
-            //  Đảm bảo model hợp lệ trước khi xử lý
             if (!ModelState.IsValid) return Page();
 
-            // Đảm bảo thư mục uploads tồn tại, nếu chưa có thì tạo mới
-            var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads");
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
-
-            // Danh sách file đã upload để dọn dẹp (Rollback) nếu DB lưu thất bại 
-            var uploadedFilePaths = new List<string>();
+            // Danh sách file đã upload để dọn dẹp (Rollback) nếu DB lưu thất bại
+            var uploadedPaths = new List<string>();
 
             try
             {
-                // --- LOGIC UPLOAD ẢNH ---
+                // --- H-3: Dùng IFileUploadService thay vì logic được copy-paste ---
                 if (ImageUpload != null)
                 {
-                    var ext = Path.GetExtension(ImageUpload.FileName).ToLowerInvariant();
-
-                    //  Validate file extension
-                    if (!_allowedImageExtensions.Contains(ext))
+                    var (success, path, error) = await _fileUploadService.SaveImageAsync(ImageUpload, cancellationToken);
+                    if (!success)
                     {
-                        ModelState.AddModelError("ImageUpload", "Chỉ chấp nhận file ảnh (.jpg, .png, .gif, .webp).");
+                        ModelState.AddModelError("ImageUpload", error!);
                         return Page();
                     }
-
-                    // Chống Directory Traversal bằng cách tự sinh tên mới với Guid("N") (không có dấu gạch ngang)
-                    var fileName = Guid.NewGuid().ToString("N") + ext;
-                    var uploadPath = Path.Combine(uploadsFolder, fileName);
-
-                    // Dùng FileMode.CreateNew để tránh ghi đè file hiện có (Race Condition)
-                    using (var fileStream = new FileStream(uploadPath, FileMode.CreateNew))
-                    {
-                        await ImageUpload.CopyToAsync(fileStream, cancellationToken);
-                    }
-
-                    PortfolioItem.ImageUrl = "/uploads/" + fileName;
-                    uploadedFilePaths.Add(uploadPath); // Ghi nhận đã upload
+                    PortfolioItem.ImageUrl = path!;
+                    uploadedPaths.Add(path!);
                 }
                 else
                 {
-                    // Dùng ảnh local thay vì external link dễ bị die
                     PortfolioItem.ImageUrl = "/images/no-image.png";
                 }
 
-                // --- LOGIC UPLOAD AUDIO ---
                 if (AudioUpload != null)
                 {
-                    var ext = Path.GetExtension(AudioUpload.FileName).ToLowerInvariant();
-
-                    if (!_allowedAudioExtensions.Contains(ext))
+                    var (success, path, error) = await _fileUploadService.SaveAudioAsync(AudioUpload, cancellationToken);
+                    if (!success)
                     {
-                        ModelState.AddModelError("AudioUpload", "Chỉ chấp nhận file âm thanh (.mp3, .wav, .ogg).");
-                        RollbackUploadedFiles(uploadedFilePaths); // Xóa ảnh đã up (nếu có) trước khi return
+                        ModelState.AddModelError("AudioUpload", error!);
+                        _fileUploadService.RollbackFiles(uploadedPaths);
                         return Page();
                     }
-
-                    var audioName = Guid.NewGuid().ToString("N") + ext;
-                    var audioPath = Path.Combine(uploadsFolder, audioName);
-
-                    using (var stream = new FileStream(audioPath, FileMode.CreateNew))
-                    {
-                        await AudioUpload.CopyToAsync(stream, cancellationToken);
-                    }
-
-                    PortfolioItem.AudioUrl = "/uploads/" + audioName;
-                    uploadedFilePaths.Add(audioPath); // Ghi nhận đã upload
+                    PortfolioItem.AudioUrl = path!;
+                    uploadedPaths.Add(path!);
                 }
                 else
                 {
-                    // Cấp giá trị mặc định an toàn nếu không có audio
-                    PortfolioItem.AudioUrl = "";
+                    PortfolioItem.AudioUrl = string.Empty;
                 }
 
-                // Xử lý lưu Database
                 PortfolioItem.CreatedDate = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
                 _context.PortfolioItems.Add(PortfolioItem);
-
-                // Truyền cancellationToken vào DB Save
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // Gọi hàm Helper xóa tất cả Cache liên quan để dữ liệu mới được hiển thị ngay
+                // H-1: Dùng CacheKeys constants
                 await InvalidateRelevantCachesAsync();
-
                 return RedirectToPage("/Index");
             }
             catch (Exception ex)
             {
-                //  Bắt lỗi hệ thống (Database chết, mất mạng) và Dọn dẹp file rác
-                _logger.LogError(ex, "Lỗi khi lưu bài hát. Hệ thống đang rollback các file đã upload...");
-                RollbackUploadedFiles(uploadedFilePaths);
-
+                _logger.LogError(ex, "Failed to save portfolio item. Rolling back uploaded files.");
+                _fileUploadService.RollbackFiles(uploadedPaths);
                 ModelState.AddModelError("", "Đã xảy ra lỗi hệ thống khi lưu dữ liệu. Vui lòng thử lại.");
                 return Page();
             }
         }
 
-        // ==========================================
-        // HELPER METHODS
-        // ==========================================
-        // Dọn dẹp file rác (Orphaned files) nếu quá trình lưu DB thất bại
-        private void RollbackUploadedFiles(List<string> filePaths)
-        {
-            foreach (var path in filePaths)
-            {
-                if (System.IO.File.Exists(path))
-                {
-                    try { System.IO.File.Delete(path); }
-                    catch (Exception ex) { _logger.LogWarning(ex, $"Không thể xóa file rác: {path}"); }
-                }
-            }
-        }
-        /// Xóa triệt để các Cache liên quan sau khi tạo mới
+
+        // H-1: Dùng CacheKeys constants — fix bug invalidation không hoạt động
         private async Task InvalidateRelevantCachesAsync()
         {
             var keysToRemove = new[]
             {
-                "home_projects_normal_none",
-                "home_projects_library_none",
-                "dashboard_stats"
+                CacheKeys.HomeProjectsNormal,
+                CacheKeys.HomeProjectsLibrary,
+                CacheKeys.DashboardStats
             };
 
             foreach (var key in keysToRemove)

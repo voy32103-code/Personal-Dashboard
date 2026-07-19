@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 
 namespace MyPortfolio.Core.Entities
 {
+    // M-2: Xóa duplicate using, M-3: Cleanup unused usings (Linq, Text, Threading, Collections không cần thiết)
     public class DownloadLog
     {
         [Key]
@@ -18,7 +13,6 @@ namespace MyPortfolio.Core.Entities
 
         public DateTime DownloadedAt { get; set; }
 
-        // Lưu IP và Trình duyệt để phân tích
         public string? IPAddress { get; set; }
         public string? UserAgent { get; set; }
     }

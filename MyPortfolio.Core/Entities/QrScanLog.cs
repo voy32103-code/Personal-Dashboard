@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 
 namespace MyPortfolio.Core.Entities
 {
+    // M-3: Cleanup unused usings (Linq, Text, Threading, Collections không cần thiết trong entity)
     public class QrScanLog
     {
         [Key]

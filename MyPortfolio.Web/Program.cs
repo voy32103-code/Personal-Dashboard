@@ -11,6 +11,11 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using QuestPDF.Infrastructure;
+using MyPortfolio.Web.Infrastructure;
+
+// M-5: Set QuestPDF license 1 lần lúc startup — KHÔNG set trong Page Model constructor
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,11 +32,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // 1.2. Đăng ký Identity (Quản lý User)
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
-    options.Password.RequireDigit = false;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequiredLength = 6;
+    // Password Policy — đủ mạnh cho production
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 8;
+    // Lockout — khóa tài khoản sau 5 lần nhập sai
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
@@ -57,7 +67,11 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-// 1.5. Đăng ký Google Authentication
+// 1.6. Đăng ký Application Services
+// H-3: IFileUploadService — tập trung logic upload, validate, xóa file, tránh copy-paste
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+
+// 1.7. Đăng ký Google Authentication
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
     {
@@ -73,6 +87,14 @@ builder.Services.AddAuthentication()
             return Task.CompletedTask;
         };
     });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("OwnerOnly", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim(System.Security.Claims.ClaimTypes.Email, "voy32103@gmail.com"));
+});
+
 
 // 1.6. CẤU HÌNH REDIS (Phải nằm ở đây, TRƯỚC khi Build) 
 var redisConnection = builder.Configuration.GetConnectionString("RedisConnection")
@@ -98,6 +120,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     // Xóa các proxy mặc định để cho phép Render load balancer truyền header vào
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
+    options.ForwardLimit = 1; // Chỉ tin tưởng 1 hop từ Render Load Balancer
 });
 builder.Services.AddResponseCaching();
 builder.Services.AddAntiforgery(options => {
@@ -160,18 +183,35 @@ app.MapRazorPages();
 app.MapControllers(); // Map các Controller của Web API
 app.MapHub<MusicHub>("/musicHub");
 
-// Tự động Migrate Database
+// Tự động Migrate Database + Seed Profile User
+// C-3: Seed logic tập trung ở đây — KHÔNG seed trong OnGetAsync của Profile page
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
     try
     {
         var context = services.GetRequiredService<MyPortfolio.Infrastructure.Data.ApplicationDbContext>();
         context.Database.Migrate();
+
+        // Seed profile user nếu chưa tồn tại (chạy 1 lần duy nhất)
+        if (!context.Users.Any())
+        {
+            var config = services.GetRequiredService<IConfiguration>();
+            context.Users.Add(new MyPortfolio.Core.Entities.User
+            {
+                Name = config["Profile:Name"] ?? "VÕ HƯNG YÊN",
+                Email = config["Profile:Email"] ?? string.Empty,
+                Phone = config["Profile:Phone"] ?? string.Empty,
+                Summary = config["Profile:Summary"] ?? "SE Student @ HUFLIT • .NET Full-Stack Developer",
+                AvatarPath = config["Profile:AvatarPath"] ?? "/images/no-image.png",
+            });
+            await context.SaveChangesAsync();
+            logger.LogInformation("Seeded default profile user.");
+        }
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "Lỗi khi khởi tạo Database.");
     }
 }

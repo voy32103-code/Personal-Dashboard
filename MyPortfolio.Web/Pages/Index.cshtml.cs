@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MyPortfolio.Core.Entities;
 using MyPortfolio.Infrastructure.Data;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
+using MyPortfolio.Web.Infrastructure;
 
 namespace MyPortfolio.Web.Pages
 {
@@ -12,11 +13,13 @@ namespace MyPortfolio.Web.Pages
     {
         private readonly ApplicationDbContext _context;
         private readonly IDistributedCache _cache;
+        private readonly ILogger<IndexModel> _logger;
 
-        public IndexModel(ApplicationDbContext context, IDistributedCache cache)
+        public IndexModel(ApplicationDbContext context, IDistributedCache cache, ILogger<IndexModel> logger)
         {
             _context = context;
             _cache = cache;
+            _logger = logger;
         }
 
         public IList<PortfolioItem> Projects { get; set; } = new List<PortfolioItem>();
@@ -31,11 +34,12 @@ namespace MyPortfolio.Web.Pages
         {
             string modeKey = string.IsNullOrEmpty(Mode) ? "normal" : Mode.ToLower();
             string searchKey = string.IsNullOrEmpty(SearchString) ? "none" : SearchString.ToLower().Trim();
-            string cacheKey = $"home_projects:{modeKey}:{searchKey}";
+            // H-1: Dùng CacheKeys.HomeProjects() — đồng bộ với Create/Edit/Delete
+            string cacheKey = CacheKeys.HomeProjects(modeKey, searchKey);
 
             ViewData["Title"] = (modeKey == "library") ? "Thư Viện Của Tôi" : "Trang Chủ";
 
-            // --- 1. THỬ LẤY TỪ CACHE ---
+            // --- 1. THử LẤY TỪ CACHE ---
             var cachedData = await _cache.GetStringAsync(cacheKey);
 
             if (!string.IsNullOrEmpty(cachedData))
@@ -46,18 +50,19 @@ namespace MyPortfolio.Web.Pages
                     if (cached == null) throw new InvalidOperationException("Deserialization trả về null.");
 
                     Projects = cached;
-                    Console.WriteLine($"========== 🟢 TRANG CHỦ: LẤY TỪ REDIS [{cacheKey}] ==========");
+                    // M-1: Dùng ILogger thay vì Console.WriteLine
+                    _logger.LogInformation("Cache HIT: {CacheKey}", cacheKey);
                     return Page();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Lỗi đọc Cache: {ex.Message}. Đang xóa cache lỗi...");
+                    _logger.LogWarning(ex, "Cache read failed for key: {CacheKey}. Removing stale cache.", cacheKey);
                     await _cache.RemoveAsync(cacheKey);
                 }
             }
 
             // --- 2. GỌI DATABASE ---
-            Console.WriteLine($"========== 🔴 TRANG CHỦ: GỌI DATABASE [{cacheKey}] ==========");
+            _logger.LogInformation("Cache MISS, querying DB: {CacheKey}", cacheKey);
 
             try
             {
@@ -90,7 +95,7 @@ namespace MyPortfolio.Web.Pages
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Lỗi truy vấn DB: {ex.Message}");
+                _logger.LogError(ex, "DB query failed for key: {CacheKey}", cacheKey);
                 Projects = new List<PortfolioItem>();
                 TempData["ErrorMessage"] = "Không thể tải dữ liệu. Vui lòng thử lại sau.";
             }
@@ -98,15 +103,15 @@ namespace MyPortfolio.Web.Pages
             return Page();
         }
 
-        // --- 3. XÓA CACHE SAU KHI THAY ĐỔI DỮ LIỆU ---
+        // H-1: Dùng CacheKeys constants — đồng bộ format với Create/Edit/Delete
         private async Task InvalidateProjectsCache()
         {
             var keysToRemove = new[]
             {
-                "home_projects:normal:none",
-                "home_projects:library:none",
-                string.IsNullOrEmpty(SearchString) ? null : $"home_projects:normal:{SearchString.ToLower().Trim()}",
-                string.IsNullOrEmpty(SearchString) ? null : $"home_projects:library:{SearchString.ToLower().Trim()}"
+                CacheKeys.HomeProjectsNormal,
+                CacheKeys.HomeProjectsLibrary,
+                string.IsNullOrEmpty(SearchString) ? null : CacheKeys.HomeProjects("normal", SearchString.ToLower().Trim()),
+                string.IsNullOrEmpty(SearchString) ? null : CacheKeys.HomeProjects("library", SearchString.ToLower().Trim())
             };
 
             foreach (var key in keysToRemove.Where(k => k != null).Distinct())
@@ -133,16 +138,21 @@ namespace MyPortfolio.Web.Pages
         // --- 5. ĐẾM LƯỢT NGHE (POST) ---
         public async Task<IActionResult> OnPostCountPlayAsync(int id)
         {
-            var song = await _context.PortfolioItems.FindAsync(id);
+            var affectedRows = await _context.PortfolioItems
+                .Where(p => p.Id == id)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.PlayCount, p => p.PlayCount + 1));
 
-            if (song == null)
+            if (affectedRows == 0)
                 return new JsonResult(new { success = false, message = "Không tìm thấy bài hát." });
 
-            song.PlayCount++;
-            await _context.SaveChangesAsync();
+            var newCount = await _context.PortfolioItems
+                .Where(p => p.Id == id)
+                .Select(p => p.PlayCount)
+                .FirstOrDefaultAsync();
+
             await InvalidateProjectsCache();
 
-            return new JsonResult(new { success = true, newCount = song.PlayCount });
+            return new JsonResult(new { success = true, newCount = newCount });
         }
     }
 }

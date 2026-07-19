@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -50,7 +50,7 @@
                         <i class="fas fa-heart text-danger"></i> Liked Songs
                     </a>
 
-                    @if (User.Identity.IsAuthenticated)
+                    @if (User.Identity?.IsAuthenticated == true)
                     {
                         <a href="/Admin/Dashboard" class="neumorph-btn btn-sm rounded-pill text-decoration-none py-2 mb-2 w-100 text-warning">
                             <i class="fas fa-chart-line me-2"></i> Dashboard
@@ -60,7 +60,11 @@
                             <a href="/Portfolio/Create" class="neumorph-btn btn-sm rounded-pill text-decoration-none py-2 mb-2 w-100">
                                 <i class="fas fa-plus me-2"></i> New Project
                             </a>
-                            <a href="/Login?handler=Logout" class="text-danger small text-decoration-none hover-underline">Logout</a>
+                            <form asp-page="/Login" asp-page-handler="Logout" method="post" class="d-inline w-100">
+                                <button type="submit" class="text-danger small btn btn-link p-0 border-0 align-baseline hover-underline text-decoration-none" style="background:none; border:none; box-shadow:none; cursor:pointer;">
+                                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                                </button>
+                            </form>
                         </div>
                     }
                     else
@@ -139,7 +143,9 @@
         var isShuffle  = localStorage.getItem("shuffleMode") === "true";
         var playlist   = [];
         var currentIndex = -1;
-        var lastVolume = 1;
+        var savedVolume = localStorage.getItem("playerVolume");
+        var initialVolume = savedVolume !== null ? parseFloat(savedVolume) : 0.5;
+        var lastVolume = initialVolume > 0 ? initialVolume : 0.5;
         var playTimeout = null;
 
         const PREV_THRESHOLD_SECONDS = 3;
@@ -148,8 +154,8 @@
         window.addEventListener("load", function () {
             if (isRepeat)  repeatBtn.style.color  = "#1db954";
             if (isShuffle) shuffleBtn.style.color = "#1db954";
-            volumeSlider.value = 1;
-            setVolume(1);
+            volumeSlider.value = initialVolume;
+            setVolume(initialVolume);
         });
 
         // ==========================================
@@ -377,6 +383,11 @@
                 progressBar.style.width = percent + "%";
                 currentTimeLabel.innerText = formatTime(audio.currentTime);
             }
+            // Phát sự kiện để đồng bộ lời nhạc (LRC)
+            var event = new CustomEvent('audioTimeUpdate', {
+                detail: { currentTime: audio.currentTime }
+            });
+            window.dispatchEvent(event);
         });
 
         audio.addEventListener("loadedmetadata", function () {
@@ -417,11 +428,16 @@
         // ==========================================
         function setVolume(val) {
             val = parseFloat(val);
-            if (isNaN(val)) val = 1;
+            if (isNaN(val)) val = 0.5;
             var finalVol = Math.max(0, Math.min(1, val));
             audio.volume = finalVol;
             volumeSlider.value = finalVol;
-            if (finalVol > 0) lastVolume = finalVol;
+            if (finalVol > 0) {
+                lastVolume = finalVol;
+                localStorage.setItem("playerVolume", finalVol);
+            } else {
+                localStorage.setItem("playerVolume", 0);
+            }
             updateVolumeIcon(finalVol);
         }
 
@@ -430,7 +446,7 @@
                 lastVolume = audio.volume;
                 setVolume(0);
             } else {
-                setVolume(lastVolume || 1);
+                setVolume(lastVolume || 0.5);
             }
         }
 

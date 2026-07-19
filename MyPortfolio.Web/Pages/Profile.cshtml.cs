@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MyPortfolio.Core.Entities;
@@ -8,6 +8,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
+using MyPortfolio.Web.Infrastructure;
 
 namespace MyPortfolio.Web.Pages
 {
@@ -31,7 +32,7 @@ namespace MyPortfolio.Web.Pages
         {
             _context = context;
             _cache = cache;
-            QuestPDF.Settings.License = LicenseType.Community;
+            // M-5: QuestPDF.Settings.License được set trong Program.cs, không cần set lại ở đây
         }
 
         public User ProfileUser { get; set; } = default!;
@@ -46,13 +47,15 @@ namespace MyPortfolio.Web.Pages
         // ================================================================
         // 1. LOAD TRANG PROFILE
         // ================================================================
-        public async Task<IActionResult> OnGetAsync(int id = 1)
+        // C-4: Không hardcode id != 1 — lấy user đầu tiên trong DB (sau khi seed)
+        public async Task<IActionResult> OnGetAsync()
         {
-            if (id != 1) return NotFound();
+            var user = await _context.Users
+                .OrderBy(u => u.Id)
+                .FirstOrDefaultAsync();
 
-            var user = await _context.Users.FindAsync(id);
-            var cachedSkills = await _cache.GetStringAsync("skills");
-
+            // Skills từ cache (dùng CacheKeys constant để nhất quán)
+            var cachedSkills = await _cache.GetStringAsync(CacheKeys.ProfileSkills);
             if (cachedSkills != null)
             {
                 Skills = JsonSerializer.Deserialize<List<SkillItem>>(cachedSkills) ?? BuildDefaultSkills();
@@ -60,24 +63,23 @@ namespace MyPortfolio.Web.Pages
             else
             {
                 Skills = BuildDefaultSkills();
-                var cacheOptions = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) };
-                await _cache.SetStringAsync("skills", JsonSerializer.Serialize(Skills), cacheOptions);
+                var cacheOptions = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                };
+                await _cache.SetStringAsync(CacheKeys.ProfileSkills, JsonSerializer.Serialize(Skills), cacheOptions);
             }
 
+            // Nếu không tìm thấy user (seed chưa chạy), dùng fallback tạm
             if (user == null)
             {
                 user = new User
                 {
                     Name = "VÕ HƯNG YÊN",
-                    Email = "voy32103@gmail.com",
-                    Phone = "0355161941",
                     Summary = "SE Student @ HUFLIT • .NET Full-Stack Developer",
-                    AvatarPath = "/uploads/e7d2d820-bceb-4d10-8c80-afb8d5a88220.jpg",
-                    CvDownloadCount = 0,
-                    QrScanCount = 0
+                    AvatarPath = "/images/no-image.png",
                 };
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
+                // KHÔNG gọi SaveChangesAsync() trong GET handler — seed được xử lý trong Program.cs
             }
 
             ProfileUser = user;
@@ -95,25 +97,29 @@ namespace MyPortfolio.Web.Pages
         // ================================================================
         // 2. DOWNLOAD CV TĨNH 
         // ================================================================
-        public async Task<IActionResult> OnPostDownloadCvAsync(int id)
+        public async Task<IActionResult> OnPostDownloadCvAsync()
         {
-            var user = await _context.Users.FindAsync(id);
+            // C-4: Không nhận id từ URL — luôn lấy profile user (tránh manipulation)
+            var user = await _context.Users.OrderBy(u => u.Id).FirstOrDefaultAsync();
             if (user == null) return NotFound();
 
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
-            var agent = Request.Headers["User-Agent"].ToString();
+            var userAgent = Request.Headers["User-Agent"].ToString();
 
             // Ghi Log vào DB
             _context.DownloadLogs.Add(new DownloadLog
             {
-                UserId = id,
+                UserId = user.Id,
                 DownloadedAt = DateTime.UtcNow,
                 IPAddress = ip,
-                UserAgent = agent
+                UserAgent = userAgent
             });
-
-            user.CvDownloadCount++;
             await _context.SaveChangesAsync();
+
+            // Tăng bộ đếm tải CV nguyên tử
+            await _context.Users
+                .Where(u => u.Id == user.Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(u => u.CvDownloadCount, u => u.CvDownloadCount + 1));
 
             // Đọc file tĩnh PDF (HungYen_CV.pdf) từ thư mục wwwroot/uploads
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "HungYen_CV.pdf");

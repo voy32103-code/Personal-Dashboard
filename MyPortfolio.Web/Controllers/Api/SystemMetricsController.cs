@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Diagnostics;
 
 namespace MyPortfolio.Web.Controllers.Api;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // H-5: Chỉ admin/authed user mới được xem system info — tránh rò rỉ thông tin server
 public class SystemMetricsController : ControllerBase
 {
     // API endpoint mẫu: /api/systemmetrics
@@ -25,6 +27,7 @@ public class SystemMetricsController : ControllerBase
 
     // API endpoint mẫu test Fluent Validation: /api/systemmetrics/contact
     [HttpPost("contact")]
+    [AllowAnonymous]
     public IActionResult SubmitContact([FromBody] DTOs.ContactFormDto contactForm)
     {
         // Nhờ FluentValidation, Model State sẽ tự động được kiểm tra trước khi vào action

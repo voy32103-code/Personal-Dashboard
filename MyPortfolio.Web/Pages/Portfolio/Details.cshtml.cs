@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MyPortfolio.Core.Entities;
 using MyPortfolio.Infrastructure.Data;
@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using MyPortfolio.Web.Infrastructure;
 
 namespace MyPortfolio.Web.Pages.Portfolio
 {
@@ -48,9 +49,16 @@ namespace MyPortfolio.Web.Pages.Portfolio
 
         // 2. Xử lý khi bấm nút Thả Tim (PRIVATE - Phải đăng nhập)
         //  Gắn [Authorize] chỉ định cho riêng hàm này
-        [Authorize]
         public async Task<IActionResult> OnPostToggleHeartAsync(int id)
         {
+            if (!User.Identity?.IsAuthenticated ?? false)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return new JsonResult(new { success = false, error = "Bạn cần đăng nhập để thực hiện chức năng này." });
+
+                return Challenge();
+            }
+
             try
             {
                 var item = await _context.PortfolioItems.FindAsync(id);
@@ -104,9 +112,9 @@ namespace MyPortfolio.Web.Pages.Portfolio
         {
             var keysToRemove = new[]
             {
-                "home_projects_normal_none",
-                "home_projects_library_none",
-                "dashboard_stats"
+                CacheKeys.HomeProjectsNormal,
+                CacheKeys.HomeProjectsLibrary,
+                CacheKeys.DashboardStats
             };
 
             foreach (var key in keysToRemove)
