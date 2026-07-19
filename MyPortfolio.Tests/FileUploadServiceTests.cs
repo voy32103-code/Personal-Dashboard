@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using MyPortfolio.Web.Infrastructure;
 using Xunit;
 
@@ -17,6 +19,7 @@ namespace MyPortfolio.Tests
         private readonly string _testWebRoot;
         private readonly Mock<IWebHostEnvironment> _mockEnv;
         private readonly Mock<ILogger<FileUploadService>> _mockLogger;
+        private readonly Mock<ICloudinary> _mockCloudinary;
         private readonly FileUploadService _service;
 
         public FileUploadServiceTests()
@@ -30,7 +33,9 @@ namespace MyPortfolio.Tests
             _mockEnv.Setup(e => e.WebRootPath).Returns(_testWebRoot);
 
             _mockLogger = new Mock<ILogger<FileUploadService>>();
-            _service = new FileUploadService(_mockEnv.Object, _mockLogger.Object);
+            _mockCloudinary = new Mock<ICloudinary>();
+
+            _service = new FileUploadService(_mockEnv.Object, _mockLogger.Object, _mockCloudinary.Object);
         }
 
         public void Dispose()
@@ -63,18 +68,19 @@ namespace MyPortfolio.Tests
         {
             // Arrange
             var fileMock = CreateMockFormFile("avatar.png", 1024, new byte[] { 0x89, 0x50, 0x4E, 0x47 });
+            var expectedUrl = "https://res.cloudinary.com/test-cloud/image/upload/v12345/portfolio/images/test-image.png";
+            
+            _mockCloudinary
+                .Setup(c => c.UploadAsync(It.IsAny<ImageUploadParams>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ImageUploadResult { SecureUrl = new Uri(expectedUrl) });
 
             // Action
             var (success, path, error) = await _service.SaveImageAsync(fileMock.Object);
 
             // Assert
             Assert.True(success);
-            Assert.NotNull(path);
+            Assert.Equal(expectedUrl, path);
             Assert.Null(error);
-            Assert.StartsWith("/uploads/", path);
-
-            var physicalPath = Path.Combine(_testWebRoot, path.TrimStart('/'));
-            Assert.True(File.Exists(physicalPath));
         }
 
         [Fact]
@@ -114,18 +120,19 @@ namespace MyPortfolio.Tests
         {
             // Arrange
             var fileMock = CreateMockFormFile("music.mp3", 1024, new byte[] { 0x49, 0x44, 0x33 });
+            var expectedUrl = "https://res.cloudinary.com/test-cloud/video/upload/v12345/portfolio/audio/test-audio.mp3";
+
+            _mockCloudinary
+                .Setup(c => c.UploadAsync(It.IsAny<VideoUploadParams>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new VideoUploadResult { SecureUrl = new Uri(expectedUrl) });
 
             // Action
             var (success, path, error) = await _service.SaveAudioAsync(fileMock.Object);
 
             // Assert
             Assert.True(success);
-            Assert.NotNull(path);
+            Assert.Equal(expectedUrl, path);
             Assert.Null(error);
-            Assert.StartsWith("/uploads/", path);
-
-            var physicalPath = Path.Combine(_testWebRoot, path.TrimStart('/'));
-            Assert.True(File.Exists(physicalPath));
         }
 
         [Fact]
@@ -145,20 +152,22 @@ namespace MyPortfolio.Tests
         }
 
         [Fact]
-        public void DeleteFile_WithSafePath_ShouldDeleteFileSuccessfully()
+        public void DeleteFile_WithCloudinaryUrl_ShouldDeleteFromCloudinary()
         {
             // Arrange
-            var fileName = Guid.NewGuid().ToString("N") + ".jpg";
-            var relativePath = "/uploads/" + fileName;
-            var fullPath = Path.Combine(_testWebRoot, "uploads", fileName);
-            File.WriteAllText(fullPath, "test content");
-            Assert.True(File.Exists(fullPath));
+            var cloudinaryUrl = "https://res.cloudinary.com/test-cloud/image/upload/v12345/portfolio/images/test-image.png";
+            
+            _mockCloudinary
+                .Setup(c => c.Destroy(It.IsAny<DeletionParams>()))
+                .Returns(new DeletionResult { Result = "ok" });
 
             // Action
-            _service.DeleteFile(relativePath);
+            _service.DeleteFile(cloudinaryUrl);
 
             // Assert
-            Assert.False(File.Exists(fullPath));
+            _mockCloudinary.Verify(
+                c => c.Destroy(It.Is<DeletionParams>(p => p.PublicId == "portfolio/images/test-image" && p.ResourceType == ResourceType.Image)),
+                Times.Once);
         }
 
         [Fact]
@@ -194,24 +203,23 @@ namespace MyPortfolio.Tests
         public void RollbackFiles_ShouldDeleteAllUploadedFiles()
         {
             // Arrange
-            var file1 = "/uploads/" + Guid.NewGuid().ToString("N") + ".jpg";
-            var file2 = "/uploads/" + Guid.NewGuid().ToString("N") + ".mp3";
+            var file1 = "https://res.cloudinary.com/test-cloud/image/upload/v12345/portfolio/images/file1.jpg";
+            var file2 = "https://res.cloudinary.com/test-cloud/video/upload/v12345/portfolio/audio/file2.mp3";
 
-            var fullPath1 = Path.Combine(_testWebRoot, file1.TrimStart('/'));
-            var fullPath2 = Path.Combine(_testWebRoot, file2.TrimStart('/'));
-
-            File.WriteAllText(fullPath1, "image data");
-            File.WriteAllText(fullPath2, "audio data");
-
-            Assert.True(File.Exists(fullPath1));
-            Assert.True(File.Exists(fullPath2));
+            _mockCloudinary
+                .Setup(c => c.Destroy(It.IsAny<DeletionParams>()))
+                .Returns(new DeletionResult { Result = "ok" });
 
             // Action
             _service.RollbackFiles(new[] { file1, file2 });
 
             // Assert
-            Assert.False(File.Exists(fullPath1));
-            Assert.False(File.Exists(fullPath2));
+            _mockCloudinary.Verify(
+                c => c.Destroy(It.Is<DeletionParams>(p => p.PublicId == "portfolio/images/file1" && p.ResourceType == ResourceType.Image)),
+                Times.Once);
+            _mockCloudinary.Verify(
+                c => c.Destroy(It.Is<DeletionParams>(p => p.PublicId == "portfolio/audio/file2" && p.ResourceType == ResourceType.Video)),
+                Times.Once);
         }
     }
 }

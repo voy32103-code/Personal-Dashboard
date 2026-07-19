@@ -13,6 +13,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using QuestPDF.Infrastructure;
 using MyPortfolio.Web.Infrastructure;
+using CloudinaryDotNet;
 
 // M-5: Set QuestPDF license 1 lần lúc startup — KHÔNG set trong Page Model constructor
 QuestPDF.Settings.License = LicenseType.Community;
@@ -68,6 +69,30 @@ builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // 1.6. Đăng ký Application Services
+// Đăng ký Cloudinary
+var cloudinaryUrl = builder.Configuration["CLOUDINARY_URL"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL");
+if (!string.IsNullOrEmpty(cloudinaryUrl))
+{
+    builder.Services.AddSingleton<ICloudinary>(new Cloudinary(cloudinaryUrl));
+}
+else
+{
+    var configSection = builder.Configuration.GetSection("Cloudinary");
+    var cloudName = configSection["CloudName"];
+    var apiKey = configSection["ApiKey"];
+    var apiSecret = configSection["ApiSecret"];
+
+    if (!string.IsNullOrEmpty(cloudName) && !string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(apiSecret))
+    {
+        var account = new Account(cloudName, apiKey, apiSecret);
+        builder.Services.AddSingleton<ICloudinary>(new Cloudinary(account));
+    }
+    else
+    {
+        builder.Services.AddSingleton<ICloudinary>(new Cloudinary());
+    }
+}
+
 // H-3: IFileUploadService — tập trung logic upload, validate, xóa file, tránh copy-paste
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
