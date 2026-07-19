@@ -12,7 +12,8 @@ public class FileUploadService : IFileUploadService
 
     private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
     private static readonly string[] AllowedAudioExtensions = { ".mp3", ".wav", ".ogg" };
-    private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10MB
+    private const long MaxImageFileSizeBytes = 10 * 1024 * 1024; // 10MB
+    private const long MaxAudioFileSizeBytes = 20 * 1024 * 1024; // 20MB
 
     public FileUploadService(IWebHostEnvironment environment, ILogger<FileUploadService> logger)
     {
@@ -27,7 +28,7 @@ public class FileUploadService : IFileUploadService
         if (!AllowedImageExtensions.Contains(ext))
             return (false, null, $"Chỉ chấp nhận file ảnh ({string.Join(", ", AllowedImageExtensions)}).");
 
-        if (file.Length > MaxFileSizeBytes)
+        if (file.Length > MaxImageFileSizeBytes)
             return (false, null, "File ảnh không được vượt quá 10MB.");
 
         return await SaveFileAsync(file, ext, cancellationToken);
@@ -40,8 +41,8 @@ public class FileUploadService : IFileUploadService
         if (!AllowedAudioExtensions.Contains(ext))
             return (false, null, $"Chỉ chấp nhận file âm thanh ({string.Join(", ", AllowedAudioExtensions)}).");
 
-        if (file.Length > MaxFileSizeBytes)
-            return (false, null, "File audio không được vượt quá 10MB.");
+        if (file.Length > MaxAudioFileSizeBytes)
+            return (false, null, "File audio không được vượt quá 20MB.");
 
         return await SaveFileAsync(file, ext, cancellationToken);
     }

@@ -129,6 +129,22 @@ namespace MyPortfolio.Tests
         }
 
         [Fact]
+        public async Task SaveAudioAsync_WithFileTooLarge_ShouldReturnError()
+        {
+            // Arrange (21MB file)
+            var fileMock = CreateMockFormFile("large_audio.mp3", 21L * 1024 * 1024, new byte[0]);
+
+            // Action
+            var (success, path, error) = await _service.SaveAudioAsync(fileMock.Object);
+
+            // Assert
+            Assert.False(success);
+            Assert.Null(path);
+            Assert.NotNull(error);
+            Assert.Contains("không được vượt quá 20MB", error);
+        }
+
+        [Fact]
         public void DeleteFile_WithSafePath_ShouldDeleteFileSuccessfully()
         {
             // Arrange
