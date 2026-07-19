@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model MyPortfolio.Web.Pages.Admin.DashboardModel
 @using System.Text.Json
 @{
@@ -10,7 +10,7 @@
 
     @* STAT CARDS *@
     <div class="row g-4 mb-5">
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-4">
             <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100 border-start border-4 border-primary">
                 <div>
                     <h3 class="text-white fw-bold display-5 mb-0">@Model.TotalSongs</h3>
@@ -19,7 +19,7 @@
                 <div class="text-primary display-5"><i class="fas fa-music"></i></div>
             </div>
         </div>
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-4">
             <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100 border-start border-4 border-warning">
                 <div>
                     <h3 class="text-white fw-bold display-5 mb-0">@Model.TotalPlays</h3>
@@ -28,22 +28,13 @@
                 <div class="text-warning display-5"><i class="fas fa-headphones"></i></div>
             </div>
         </div>
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-4">
             <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100 border-start border-4 border-success">
                 <div>
                     <h3 class="text-white fw-bold display-5 mb-0">@Model.TotalDownloads</h3>
                     <p class="text-white-50 small text-uppercase fw-bold mb-0">CV Downloads</p>
                 </div>
                 <div class="text-success display-5"><i class="fas fa-file-download"></i></div>
-            </div>
-        </div>
-        <div class="col-md-6 col-xl-3">
-            <div class="glass-panel p-4 d-flex align-items-center justify-content-between h-100 border-start border-4 border-info">
-                <div>
-                    <h3 class="text-white fw-bold display-5 mb-0">@Model.TotalQrScans</h3>
-                    <p class="text-white-50 small text-uppercase fw-bold mb-0">QR Scans</p>
-                </div>
-                <div class="text-info display-5"><i class="fas fa-qrcode"></i></div>
             </div>
         </div>
     </div>
@@ -229,7 +220,6 @@
         // =========================================
         const trafficLabels = @Html.Raw(string.IsNullOrEmpty(Model.ChartLabelsJson) ? "[]" : Model.ChartLabelsJson);
         const downloadData  = @Html.Raw(string.IsNullOrEmpty(Model.DownloadDataJson) ? "[]" : Model.DownloadDataJson);
-        const scanData      = @Html.Raw(string.IsNullOrEmpty(Model.ScanDataJson) ? "[]" : Model.ScanDataJson);
 
         const ctxTraffic = document.getElementById('trafficChart').getContext('2d');
 
@@ -245,14 +235,6 @@
                         backgroundColor: 'rgba(29, 185, 84, 0.1)',
                         borderWidth: 3, tension: 0.4, fill: true,
                         pointBackgroundColor: '#1db954'
-                    },
-                    {
-                        label: 'QR Scans',
-                        data: scanData,
-                        borderColor: '#00d4ff',
-                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                        borderWidth: 3, tension: 0.4, fill: true,
-                        pointBackgroundColor: '#00d4ff'
                     }
                 ]
             },

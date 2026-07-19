@@ -18,9 +18,7 @@ namespace MyPortfolio.Core.Entities
         public string? AvatarPath { get; set; }
 
         public int CvDownloadCount { get; set; }
-        public int QrScanCount { get; set; }
 
         public ICollection<DownloadLog> DownloadLogs { get; set; } = new List<DownloadLog>();
-        public ICollection<QrScanLog> QrScanLogs { get; set; } = new List<QrScanLog>();
     }
 }

@@ -14,7 +14,6 @@ namespace MyPortfolio.Infrastructure.Data
         public DbSet<PortfolioItem> PortfolioItems { get; set; }
         public new DbSet<User> Users { get; set; }
         public DbSet<DownloadLog> DownloadLogs { get; set; }
-        public DbSet<QrScanLog> QrScanLogs { get; set; }
 
         // L-2: Thêm OnModelCreating với indexes để PostgreSQL không bị full table scan
         protected override void OnModelCreating(ModelBuilder builder)
@@ -34,9 +33,6 @@ namespace MyPortfolio.Infrastructure.Data
                 .HasIndex(d => d.DownloadedAt)
                 .HasDatabaseName("IX_DownloadLogs_DownloadedAt");
 
-            builder.Entity<QrScanLog>()
-                .HasIndex(s => s.ScannedAt)
-                .HasDatabaseName("IX_QrScanLogs_ScannedAt");
 
             // Column constraints
             builder.Entity<PortfolioItem>()

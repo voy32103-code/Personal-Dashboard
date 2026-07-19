@@ -38,10 +38,8 @@ namespace MyPortfolio.Web.Pages.Admin
 
         // --- DỮ LIỆU ANALYTICS ---
         public int TotalDownloads { get; set; }
-        public int TotalQrScans { get; set; }
         public string ChartLabelsJson { get; set; } = "[]";
         public string DownloadDataJson { get; set; } = "[]";
-        public string ScanDataJson { get; set; } = "[]";
         public List<LogItem> RecentLogs { get; set; } = new();
 
         public class LogItem
@@ -151,7 +149,6 @@ namespace MyPortfolio.Web.Pages.Admin
         private async Task LoadAnalyticsAsync()
         {
             TotalDownloads = await _context.DownloadLogs.CountAsync();
-            TotalQrScans = await _context.QrScanLogs.CountAsync();
 
             // Biểu đồ 7 ngày qua
             var startDate = DateTime.UtcNow.AddDays(-6).Date;
@@ -162,30 +159,21 @@ namespace MyPortfolio.Web.Pages.Admin
                 .Select(g => new { Date = g.Key, Count = g.Count() })
                 .ToListAsync();
 
-            var scans = await _context.QrScanLogs
-                .Where(s => s.ScannedAt >= startDate)
-                .GroupBy(s => s.ScannedAt.Date)
-                .Select(g => new { Date = g.Key, Count = g.Count() })
-                .ToListAsync();
-
             var labels = new List<string>();
             var downloadCounts = new List<int>();
-            var scanCounts = new List<int>();
 
             for (int i = 0; i <= 6; i++)
             {
                 var date = startDate.AddDays(i);
                 labels.Add(date.ToString("dd/MM"));
                 downloadCounts.Add(downloads.FirstOrDefault(d => d.Date == date)?.Count ?? 0);
-                scanCounts.Add(scans.FirstOrDefault(s => s.Date == date)?.Count ?? 0);
             }
 
             ChartLabelsJson = JsonSerializer.Serialize(labels);
             DownloadDataJson = JsonSerializer.Serialize(downloadCounts);
-            ScanDataJson = JsonSerializer.Serialize(scanCounts);
 
-            // 5 log gần nhất (kết hợp Download + QR)
-            var recentDownloads = await _context.DownloadLogs
+            // 5 log gần nhất
+            RecentLogs = await _context.DownloadLogs
                 .OrderByDescending(d => d.DownloadedAt)
                 .Take(5)
                 .Select(d => new LogItem
@@ -195,23 +183,6 @@ namespace MyPortfolio.Web.Pages.Admin
                     Time = d.DownloadedAt
                 })
                 .ToListAsync();
-
-            var recentScans = await _context.QrScanLogs
-                .OrderByDescending(s => s.ScannedAt)
-                .Take(5)
-                .Select(s => new LogItem
-                {
-                    Action = "Scan QR",
-                    IPAddress = s.IPAddress ?? "Unknown",
-                    Time = s.ScannedAt
-                })
-                .ToListAsync();
-
-            RecentLogs = recentDownloads
-                .Concat(recentScans)
-                .OrderByDescending(l => l.Time)
-                .Take(5)
-                .ToList();
         }
 
         // Helper: gán stats từ cache object sang properties
