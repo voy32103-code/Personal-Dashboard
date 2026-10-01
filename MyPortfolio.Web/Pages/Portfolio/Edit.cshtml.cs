@@ -104,6 +104,7 @@ namespace MyPortfolio.Web.Pages.Portfolio
             existingItem.Artist = PortfolioItem.Artist;
             existingItem.ProjectUrl = PortfolioItem.ProjectUrl;
             existingItem.Lyrics = PortfolioItem.Lyrics;
+            existingItem.VideoUrl = PortfolioItem.VideoUrl;
 
             try
             {

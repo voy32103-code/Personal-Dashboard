@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model MyPortfolio.Web.Pages.Portfolio.CreateModel
 @{
     ViewData["Title"] = "Thêm Dự Án Mới";
@@ -64,6 +64,12 @@
                         <i class="fas fa-upload"></i> Upload LRC
                     </button>
                     <button type="button"
+                            class="btn btn-success"
+                            id="btn-auto-lyrics"
+                            onclick="autoFetchLyrics()">
+                        <i class="fas fa-bolt"></i> Auto-fetch LRCLIB
+                    </button>
+                    <button type="button"
                             class="btn btn-outline-warning"
                             onclick="clearLyrics()">
                         <i class="fas fa-eraser"></i> Xóa
@@ -71,7 +77,7 @@
                 </div>
                 <small class="text-muted">
                     <i class="fas fa-info-circle"></i>
-                    Upload file .lrc (tự động làm sạch) hoặc nhập thủ công theo format [MM:SS.ms]Text
+                    Upload file .lrc, nhập thủ công hoặc nhấn <b>Auto-fetch LRCLIB</b> để tự động tải lời đồng bộ.
                 </small>
             </div>
 
@@ -86,7 +92,7 @@
 [00:18.50]Dòng 2 của bài hát
 [00:24.30]Dòng 3 của bài hát
 
-Hoặc nhập plain text (sẽ tự động ước tính timing)"></textarea>
+Hoặc nhấn Auto-fetch LRCLIB ở trên để tự tải"></textarea>
             <span asp-validation-for="PortfolioItem.Lyrics" class="text-danger"></span>
 
             <!-- Lyrics Counter -->
@@ -142,6 +148,20 @@ Hoặc nhập plain text (sẽ tự động ước tính timing)"></textarea>
                     </audio>
                 </div>
             </div>
+        </div>
+
+        <!-- Video URL (YouTube / MP4) -->
+        <div class="mb-4">
+            <label class="form-label fw-bold">
+                <i class="fab fa-youtube text-danger"></i> Link Video YouTube / MP4 (Tùy chọn)
+            </label>
+            <input asp-for="PortfolioItem.VideoUrl"
+                   id="video-url-input"
+                   class="form-control bg-secondary text-white border-0"
+                   placeholder="Ví dụ: https://www.youtube.com/watch?v=... hoặc link video MP4" />
+            <small class="text-muted">
+                <i class="fas fa-info-circle"></i> Nhập link YouTube để kích hoạt chế độ xem Music Video kèm Lyrics trên website.
+            </small>
         </div>
 
         <!-- Project URL (Optional) -->
@@ -302,6 +322,45 @@ Hoặc nhập plain text (sẽ tự động ước tính timing)"></textarea>
                 return false;
             }
         });
+
+        // Auto-fetch lyrics from LRCLIB API
+        async function autoFetchLyrics() {
+            const titleInput = document.querySelector('[name="PortfolioItem.Title"]');
+            const artistInput = document.querySelector('[name="PortfolioItem.Artist"]');
+            const title = titleInput ? titleInput.value.trim() : '';
+            const artist = artistInput ? artistInput.value.trim() : '';
+
+            if (!title) {
+                alert('⚠️ Vui lòng nhập Tên Bài Hát trước khi tìm kiếm lyrics!');
+                if (titleInput) titleInput.focus();
+                return;
+            }
+
+            const btn = document.getElementById('btn-auto-lyrics');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tìm...';
+
+            try {
+                const response = await fetch(`/api/lyrics/search?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`);
+                const data = await response.json();
+
+                if (data.success && (data.syncedLyrics || data.plainLyrics)) {
+                    const lyricsText = data.syncedLyrics || data.plainLyrics;
+                    document.getElementById('lyrics-textarea').value = lyricsText;
+                    updateLyricsInfo();
+                    alert(`✅ Đã tìm thấy lyrics trên LRCLIB cho: "${data.trackName}" - ${data.artistName || 'Unknown'}!`);
+                } else {
+                    alert('❌ Không tìm thấy lyrics trên LRCLIB. Bạn có thể tự upload file .lrc hoặc nhập thủ công.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('❌ Lỗi kết nối đến dịch vụ lyrics.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
 
         // Initial check
         updateLyricsInfo();

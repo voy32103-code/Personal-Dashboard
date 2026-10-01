@@ -48,13 +48,13 @@ namespace MyPortfolio.Web.Pages
         //: Ngăn chặn Open Redirect (Phishing)
         // Chỉ cho phép chuyển hướng trong nội bộ website
  
-        private string ValidateReturnUrl(string returnUrl)
+        private string ValidateReturnUrl(string? returnUrl)
         {
-            return (Url.IsLocalUrl(returnUrl)) ? returnUrl : Url.Content("~/");
+            return (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)) ? returnUrl : Url.Content("~/");
         }
 
         // --- 1. KHI VÀO TRANG (GET) ---
-        public async Task OnGetAsync(string returnUrl = null)
+        public async Task OnGetAsync(string? returnUrl = null)
         {
             ReturnUrl = ValidateReturnUrl(returnUrl);
 
@@ -66,7 +66,7 @@ namespace MyPortfolio.Web.Pages
         }
 
         // --- 2. ĐĂNG NHẬP BẰNG MẬT KHẨU (POST) ---
-        public async Task<IActionResult> OnPostAsync(string returnUrl = null)
+        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
         {
             returnUrl = ValidateReturnUrl(returnUrl);
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
@@ -117,7 +117,7 @@ namespace MyPortfolio.Web.Pages
         }
 
         // --- 3. BẮT ĐẦU GỌI SANG GOOGLE (POST) ---
-        public IActionResult OnPostExternalLogin(string provider, string returnUrl = null)
+        public IActionResult OnPostExternalLogin(string provider, string? returnUrl = null)
         {
             returnUrl = ValidateReturnUrl(returnUrl);
             var redirectUrl = Url.Page("./Login", pageHandler: "Callback", values: new { returnUrl });
@@ -126,7 +126,7 @@ namespace MyPortfolio.Web.Pages
         }
 
         // --- 4. NHẬN KẾT QUẢ TỪ GOOGLE TRẢ VỀ (CALLBACK) ---
-        public async Task<IActionResult> OnGetCallbackAsync(string returnUrl = null, string remoteError = null)
+        public async Task<IActionResult> OnGetCallbackAsync(string? returnUrl = null, string? remoteError = null)
         {
             returnUrl = ValidateReturnUrl(returnUrl);
 

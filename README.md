@@ -28,7 +28,7 @@ Google OAuth 2.0: Hệ thống đăng nhập bảo mật qua Google Identity.
 Security Hardening: Ngăn chặn các lỗ hổng Path Traversal và RCE khi xử lý tệp tin tĩnh.
 
 🛠 Tech Stack
-Backend: ASP.NET Core 8.0 (Razor Pages), Entity Framework Core.
+Backend: ASP.NET Core 9.0 (Razor Pages), Entity Framework Core 9.
 
 Real-time: SignalR (WebSockets).
 

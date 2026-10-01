@@ -1,5 +1,5 @@
-﻿# 1. Giai đoạn Build (Dùng ảnh SDK để biên dịch code)
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# 1. Giai đoạn Build (Dùng ảnh SDK để biên dịch code)
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy các file dự án vào trước để restore (tối ưu cache)
@@ -21,7 +21,7 @@ FROM build AS publish
 RUN dotnet publish "MyPortfolio.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # 3. Giai đoạn Chạy (Dùng ảnh runtime nhẹ hơn để chạy web)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 

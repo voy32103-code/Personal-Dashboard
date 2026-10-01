@@ -1,4 +1,4 @@
-﻿namespace MyPortfolio.Core.Entities
+namespace MyPortfolio.Core.Entities
 {
     public class PortfolioItem
     {
@@ -9,6 +9,7 @@
         public string ProjectUrl { get; set; } = string.Empty;  // Link Github/Web
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public string? AudioUrl { get; set; } // Dấu ? nghĩa là có thể null (không bắt buộc)
+        public string? VideoUrl { get; set; } // Link Video YouTube hoặc file MP4
         public string? Artist { get; set; } // Tên ca sĩ
         public string? Lyrics { get; set; } // Lời bài hát
         public bool IsFavorite { get; set; } = false;

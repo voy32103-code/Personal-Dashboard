@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - My Portfolio</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -84,9 +87,17 @@
                 <img id="current-img"
                      src="https://cdn-icons-png.flaticon.com/512/174/174872.png"
                      style="width: 50px; height: 50px; border-radius: 8px; display: none; object-fit: cover; box-shadow: 0 0 10px rgba(0,0,0,0.5);" />
-                <div id="song-info" style="display: none;">
-                    <div id="current-title" class="text-white fw-bold small">Chọn bài hát...</div>
-                    <div id="current-desc" class="text-white-50 small" style="font-size: 0.7rem;">...</div>
+                <div id="song-info" style="display: none;" class="overflow-hidden">
+                    <div class="d-flex align-items-center gap-2">
+                        <div id="current-title" class="text-white fw-bold small text-truncate" style="max-width: 150px;">Chọn bài hát...</div>
+                        <div class="equalizer-wave" id="player-equalizer" style="display: none;">
+                            <span class="equalizer-bar"></span>
+                            <span class="equalizer-bar"></span>
+                            <span class="equalizer-bar"></span>
+                            <span class="equalizer-bar"></span>
+                        </div>
+                    </div>
+                    <div id="current-desc" class="text-white-50 small text-truncate" style="font-size: 0.75rem;">...</div>
                 </div>
             </div>
 
@@ -107,19 +118,95 @@
                 </div>
             </div>
 
-            <div class="d-flex justify-content-end align-items-center" style="width: 30%;">
-                <button class="btn-control me-2" onclick="toggleMute()" title="Mute (M)"><i class="fas fa-volume-up" id="volume-icon"></i></button>
+            <div class="d-flex justify-content-end align-items-center gap-2" style="width: 30%;">
+                <button class="btn-control me-1" id="btn-player-video" onclick="toggleMiniVideoPlayer()" title="Xem Music Video" style="display: none; font-size: 1.15rem;">
+                    <i class="fab fa-youtube text-danger"></i>
+                </button>
+                <button class="btn-control" onclick="toggleShortcutsModal()" title="Keyboard Shortcuts" style="font-size: 0.95rem;">
+                    <i class="fas fa-keyboard"></i>
+                </button>
+                <button class="btn-control me-1" onclick="toggleMute()" title="Mute (M)"><i class="fas fa-volume-up" id="volume-icon"></i></button>
                 <input type="range" id="volume-slider" min="0" max="1" step="0.01" class="form-range" style="width: 80px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar (Visible on mobile <= 768px) -->
+    <nav class="mobile-bottom-nav">
+        <a href="/" class="mobile-nav-item @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" && Context.Request.Query["Mode"] != "library" ? "active" : "")">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="/Profile" class="mobile-nav-item @(ViewContext.RouteData.Values["page"]?.ToString() == "/Profile" ? "active" : "")">
+            <i class="fas fa-user-astronaut"></i>
+            <span>Profile</span>
+        </a>
+        <a href="/?Mode=library" class="mobile-nav-item @(Context.Request.Query["Mode"] == "library" ? "active" : "")">
+            <i class="fas fa-heart"></i>
+            <span>Liked</span>
+        </a>
+        <form method="post" action="/Profile?handler=DownloadCv&id=" style="margin:0; display:inline;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="mobile-nav-item bg-transparent border-0 p-0" style="cursor: pointer;">
+                <i class="fas fa-file-code"></i>
+                <span>Live CV</span>
+            </button>
+        </form>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a href="/Admin/Dashboard" class="mobile-nav-item @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Admin") == true ? "active" : "") text-warning">
+                <i class="fas fa-chart-line"></i>
+                <span>Admin</span>
+            </a>
+        }
+        else
+        {
+            <a href="/Login" class="mobile-nav-item @(ViewContext.RouteData.Values["page"]?.ToString() == "/Login" ? "active" : "")">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Login</span>
+            </a>
+        }
+    </nav>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 10000; pointer-events: none;"></div>
+
+    <!-- Floating Mini Video Player Dock -->
+    <div id="mini-video-dock" class="glass-panel" style="display: none; position: fixed; bottom: 100px; right: 24px; width: 340px; border-radius: 12px; overflow: hidden; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.15); background: rgba(18, 18, 18, 0.95);">
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom border-secondary border-opacity-25" style="background: rgba(0,0,0,0.4);">
+            <span class="small fw-bold text-white d-flex align-items-center gap-2">
+                <i class="fab fa-youtube text-danger"></i>
+                <span id="mini-video-title" class="text-truncate" style="max-width: 220px;">Music Video</span>
+            </span>
+            <button class="btn btn-sm text-white-50 p-0 border-0" onclick="toggleMiniVideoPlayer(false)"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="mini-video-body" style="aspect-ratio: 16/9; background: #000; width: 100%;">
+            <!-- Dynamic Video/Iframe Content -->
+        </div>
+    </div>
+
+    <!-- Shortcuts Modal -->
+    <div id="shortcuts-modal" class="modal-backdrop-blur" style="display: none;" onclick="if(event.target === this) toggleShortcutsModal()">
+        <div class="shortcuts-card glass-panel p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-white fw-bold mb-0"><i class="fas fa-keyboard text-success me-2"></i>Keyboard Shortcuts</h5>
+                <button class="btn btn-sm text-white-50 p-0 border-0" onclick="toggleShortcutsModal()"><i class="fas fa-times fs-5"></i></button>
+            </div>
+            <div class="d-flex flex-column gap-2 text-white-50 small">
+                <div class="d-flex justify-content-between"><span>Phát / Tạm dừng</span><kbd class="shortcut-key">Space</kbd></div>
+                <div class="d-flex justify-content-between"><span>Bài tiếp theo</span><kbd class="shortcut-key">→</kbd></div>
+                <div class="d-flex justify-content-between"><span>Bài trước đó</span><kbd class="shortcut-key">←</kbd></div>
+                <div class="d-flex justify-content-between"><span>Tăng / Giảm âm lượng</span><kbd class="shortcut-key">↑ / ↓</kbd></div>
+                <div class="d-flex justify-content-between"><span>Bật / Tắt tiếng (Mute)</span><kbd class="shortcut-key">M</kbd></div>
             </div>
         </div>
     </div>
 
     <audio id="audio-player"></audio>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"
             crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
 
@@ -171,6 +258,45 @@
         }
 
         // ==========================================
+        // UI HELPERS (TOAST & MODAL)
+        // ==========================================
+        window.showToast = function (message, type = 'info', icon = '') {
+            var container = document.getElementById("toast-container");
+            if (!container) return;
+
+            var toast = document.createElement("div");
+            var iconClass = icon;
+            if (!iconClass) {
+                if (type === 'success') iconClass = 'fas fa-check-circle text-success';
+                else if (type === 'danger') iconClass = 'fas fa-exclamation-circle text-danger';
+                else if (type === 'warning') iconClass = 'fas fa-exclamation-triangle text-warning';
+                else iconClass = 'fas fa-info-circle text-info';
+            }
+
+            toast.className = `custom-toast toast-${type}`;
+            toast.style.pointerEvents = 'auto';
+            toast.innerHTML = `
+                <i class="${iconClass} fs-5"></i>
+                <div class="small fw-semibold flex-grow-1">${message}</div>
+                <button type="button" class="btn-close btn-close-white btn-sm ms-2" onclick="this.parentElement.remove()"></button>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        };
+
+        function toggleShortcutsModal() {
+            var modal = document.getElementById("shortcuts-modal");
+            if (modal) {
+                modal.style.display = modal.style.display === "none" ? "flex" : "none";
+            }
+        }
+
+        // ==========================================
         // SIGNALR SETUP
         // ==========================================
         var connection = new signalR.HubConnectionBuilder()
@@ -187,15 +313,21 @@
             try {
                 await connection.start();
                 console.log("✅ Đã kết nối vào phòng nhạc!");
+                await connection.invoke("JoinRoom", "default");
             } catch (err) {
                 console.error(err);
                 setTimeout(() => startConnection(), 5000);
             }
         }
 
-        connection.on("ReceiveMusicAction", function (action, url, time) {
+        connection.on("ReceiveMusicAction", function (action, url, time, videoUrl) {
             if (action === "play") {
-                if (audio.src !== url) audio.src = url;
+                if (audio.src !== url) {
+                    audio.src = url;
+                    if (currentIndex >= 0 && playlist[currentIndex]) {
+                        if (videoUrl) playlist[currentIndex].videoUrl = videoUrl;
+                    }
+                }
                 if (Math.abs(audio.currentTime - time) > 1) audio.currentTime = time;
 
                 var playPromise = audio.play();
@@ -215,7 +347,7 @@
         // ==========================================
         // LOGIC PHÁT NHẠC
         // ==========================================
-        function playMusic(url, title, img, desc, artist, listData) {
+        function playMusic(url, title, img, desc, artist, listData, videoUrl) {
             // Debounce chống click đúp
             if (playTimeout) return;
             playTimeout = setTimeout(() => { playTimeout = null; }, 500);
@@ -228,24 +360,28 @@
                         title:    item.title    || item.Title    || "Unknown",
                         imageUrl: item.imageUrl || item.ImageUrl || "https://via.placeholder.com/50",
                         artist:   item.artist   || item.Artist   || "Unknown",
+                        videoUrl: item.videoUrl || item.VideoUrl || "",
                         id:       parseInt(item.id || item.Id || 0)
                     }));
             } else if (playlist.length === 0) {
-                playlist = [{ audioUrl: url, title: title, imageUrl: img, artist: artist, id: 0 }];
+                playlist = [{ audioUrl: url, title: title, imageUrl: img, artist: artist, videoUrl: videoUrl || "", id: 0 }];
             }
 
             var foundIndex = playlist.findIndex(p => p.audioUrl === url);
             if (foundIndex !== -1) {
                 currentIndex = foundIndex;
+                if (videoUrl && !playlist[currentIndex].videoUrl) {
+                    playlist[currentIndex].videoUrl = videoUrl;
+                }
             } else {
-                playlist.unshift({ audioUrl: url, title: title, imageUrl: img, artist: artist, id: 0 });
+                playlist.unshift({ audioUrl: url, title: title, imageUrl: img, artist: artist, videoUrl: videoUrl || "", id: 0 });
                 currentIndex = 0;
             }
 
             loadSong(playlist[currentIndex]);
 
             if (connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("SendMusicAction", "play", url, 0).catch(err => console.error(err));
+                connection.invoke("SendMusicAction", "play", url, 0, playlist[currentIndex].videoUrl || "").catch(err => console.error(err));
             }
         }
 
@@ -258,6 +394,23 @@
             document.getElementById("current-img").style.display  = "block";
             document.getElementById("song-info").style.display    = "block";
 
+            // Cập nhật nút Video trên player bar
+            var videoBtn = document.getElementById("btn-player-video");
+            if (videoBtn) {
+                if (song.videoUrl && song.videoUrl.trim() !== '') {
+                    videoBtn.style.display = "inline-flex";
+                } else {
+                    videoBtn.style.display = "none";
+                    toggleMiniVideoPlayer(false);
+                }
+            }
+
+            // Đồng bộ Mini Video Dock nếu đang mở
+            var dock = document.getElementById("mini-video-dock");
+            if (dock && dock.style.display !== "none") {
+                renderMiniVideo(song);
+            }
+
             if (audio.src !== song.audioUrl) {
                 audio.src = song.audioUrl;
 
@@ -267,9 +420,14 @@
                         .then(() => updatePlayIcon(true))
                         .catch(error => {
                             console.error("❌ Play failed: " + error);
-                            alert("Trình duyệt chặn tự động phát. Vui lòng bấm Play.");
+                            window.showToast("Trình duyệt chặn tự động phát. Vui lòng bấm nút Play!", "warning");
                         });
                 }
+
+                // Phát sự kiện cập nhật bài hát đang phát
+                window.dispatchEvent(new CustomEvent('songLoaded', {
+                    detail: { song: song, isPlaying: true }
+                }));
 
                 // Fix 1: Đếm lượt nghe bằng POST thay vì GET
                 if (song.id > 0) {
@@ -293,27 +451,39 @@
         // ==========================================
         function togglePlay() {
             if (!audio.src) return;
+            var currentVideo = (currentIndex >= 0 && playlist[currentIndex]) ? (playlist[currentIndex].videoUrl || "") : "";
             if (audio.paused) {
                 audio.play();
                 updatePlayIcon(true);
                 if (connection.state === signalR.HubConnectionState.Connected) {
-                    connection.invoke("SendMusicAction", "play", audio.src, audio.currentTime);
+                    connection.invoke("SendMusicAction", "play", audio.src, audio.currentTime, currentVideo);
                 }
             } else {
                 audio.pause();
                 updatePlayIcon(false);
                 if (connection.state === signalR.HubConnectionState.Connected) {
-                    connection.invoke("SendMusicAction", "pause", audio.src, audio.currentTime);
+                    connection.invoke("SendMusicAction", "pause", audio.src, audio.currentTime, currentVideo);
                 }
             }
         }
 
         function updatePlayIcon(isPlaying) {
+            var eq = document.getElementById("player-equalizer");
             if (isPlaying) {
                 playIcon.classList.replace("fa-play", "fa-pause");
+                if (eq) {
+                    eq.style.display = "inline-flex";
+                    eq.classList.remove("paused");
+                }
             } else {
                 playIcon.classList.replace("fa-pause", "fa-play");
+                if (eq) {
+                    eq.classList.add("paused");
+                }
             }
+            window.dispatchEvent(new CustomEvent('playerPlayStateChange', {
+                detail: { isPlaying: isPlaying, currentSong: playlist[currentIndex] }
+            }));
         }
 
         function getNextShuffleIndex() {
@@ -335,7 +505,7 @@
             loadSong(playlist[currentIndex]);
 
             if (connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("SendMusicAction", "play", playlist[currentIndex].audioUrl, 0);
+                connection.invoke("SendMusicAction", "play", playlist[currentIndex].audioUrl, 0, playlist[currentIndex].videoUrl || "");
             }
         }
 
@@ -352,7 +522,7 @@
             loadSong(playlist[currentIndex]);
 
             if (connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("SendMusicAction", "play", playlist[currentIndex].audioUrl, 0);
+                connection.invoke("SendMusicAction", "play", playlist[currentIndex].audioUrl, 0, playlist[currentIndex].videoUrl || "");
             }
         }
 
@@ -425,7 +595,8 @@
                 audio.currentTime = newTime;
 
                 if (connection.state === signalR.HubConnectionState.Connected) {
-                    connection.invoke("SendMusicAction", "play", audio.src, newTime);
+                    var currentVideo = (currentIndex >= 0 && playlist[currentIndex]) ? (playlist[currentIndex].videoUrl || "") : "";
+                    connection.invoke("SendMusicAction", "play", audio.src, newTime, currentVideo);
                 }
             }
         });
@@ -484,6 +655,52 @@
             var timeStr = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
             if (hours > 0) timeStr = hours + ":" + (minutes < 10 ? "0" : "") + timeStr;
             return timeStr;
+        }
+
+        // ==========================================
+        // MINI VIDEO PLAYER (DOCK)
+        // ==========================================
+        function getYouTubeEmbedUrl(url) {
+            if (!url) return null;
+            var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            var match = url.match(regExp);
+            if (match && match[2].length === 11) {
+                return 'https://www.youtube.com/embed/' + match[2] + '?autoplay=1&enablejsapi=1';
+            }
+            return null;
+        }
+
+        function toggleMiniVideoPlayer(forceState) {
+            var dock = document.getElementById("mini-video-dock");
+            if (!dock) return;
+            var shouldShow = forceState !== undefined ? forceState : (dock.style.display === "none");
+            if (shouldShow) {
+                var currentSong = playlist[currentIndex];
+                if (!currentSong || !currentSong.videoUrl) {
+                    window.showToast("Bài hát này chưa có Video đính kèm!", "info");
+                    return;
+                }
+                renderMiniVideo(currentSong);
+                dock.style.display = "block";
+            } else {
+                dock.style.display = "none";
+                var body = document.getElementById("mini-video-body");
+                if (body) body.innerHTML = "";
+            }
+        }
+
+        function renderMiniVideo(song) {
+            var body = document.getElementById("mini-video-body");
+            var title = document.getElementById("mini-video-title");
+            if (!body || !song || !song.videoUrl) return;
+            if (title) title.innerText = song.title + " - " + (song.artist || "");
+
+            var ytUrl = getYouTubeEmbedUrl(song.videoUrl);
+            if (ytUrl) {
+                body.innerHTML = `<iframe src="${ytUrl}" class="w-100 h-100" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            } else {
+                body.innerHTML = `<video src="${song.videoUrl}" controls autoplay class="w-100 h-100" style="object-fit: contain;"></video>`;
+            }
         }
 
         // ==========================================

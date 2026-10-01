@@ -8,6 +8,7 @@
     var allSongsJson = JsonSerializer.Serialize(Model.Projects.Select(p => new
     {
         audioUrl = p.AudioUrl,
+        videoUrl = p.VideoUrl,
         title = p.Title,
         imageUrl = p.ImageUrl,
         artist = p.Artist,
@@ -48,6 +49,7 @@
                 <div class="glass-panel glass-card-hover p-3 h-100 d-flex flex-column position-relative js-play-card"
                      style="cursor: grab;"
                      data-audio="@item.AudioUrl"
+                     data-video="@item.VideoUrl"
                      data-title="@item.Title"
                      data-image="@item.ImageUrl"
                      data-description="@item.Description"
@@ -61,8 +63,23 @@
                              loading="lazy"
                              alt="@item.Title">
 
+                        @if (!string.IsNullOrEmpty(item.VideoUrl))
+                        {
+                            <span class="badge bg-danger bg-opacity-75 text-white position-absolute top-0 start-0 m-2 shadow-sm rounded-pill" style="font-size: 0.65rem;">
+                                <i class="fab fa-youtube"></i> MV
+                            </span>
+                        }
+
                         <span class="clay-badge bg-primary position-absolute bottom-0 start-0 m-2 shadow-sm" style="font-size: 0.7rem;">
                             @item.Artist
+                        </span>
+
+                        <span class="card-eq-badge position-absolute bottom-0 end-0 m-2 p-1 px-2 rounded-pill bg-dark bg-opacity-75 border border-success border-opacity-50" style="display: none;">
+                            <span class="equalizer-wave">
+                                <span class="equalizer-bar"></span>
+                                <span class="equalizer-bar"></span>
+                                <span class="equalizer-bar"></span>
+                            </span>
                         </span>
                     </div>
 
@@ -141,6 +158,7 @@
                 card.addEventListener('click', function () {
                     // Lấy dữ liệu từ data-* attributes
                     var audio  = this.dataset.audio;
+                    var video  = this.dataset.video;
                     var title  = this.dataset.title;
                     var image  = this.dataset.image;
                     var desc   = this.dataset.description;
@@ -149,7 +167,7 @@
 
                     // Gọi hàm playMusic từ _Layout
                     if (typeof playMusic === 'function') {
-                        playMusic(audio, title, image, desc, artist, allSongs);
+                        playMusic(audio, title, image, desc, artist, allSongs, video);
                     }
 
                     // Gọi API đếm lượt nghe
@@ -169,10 +187,43 @@
                     })
                     .catch(err => console.error("Lỗi đếm lượt nghe:", err));
                 });
+            // --- 4. ĐỒNG BỘ TRẠNG THÁI BÀI HÁT ĐANG PHÁT LÊN THẺ (CARD) ---
+            function updateCardVisualStates(activeId, isPlaying) {
+                document.querySelectorAll('.js-play-card').forEach(function (card) {
+                    var cardId = parseInt(card.dataset.id);
+                    var eqBadge = card.querySelector('.card-eq-badge');
+                    var eqWave = card.querySelector('.equalizer-wave');
+
+                    if (cardId === activeId) {
+                        card.classList.add('is-playing-card');
+                        if (eqBadge) eqBadge.style.display = 'inline-flex';
+                        if (eqWave) {
+                            if (isPlaying) eqWave.classList.remove('paused');
+                            else eqWave.classList.add('paused');
+                        }
+                    } else {
+                        card.classList.remove('is-playing-card');
+                        if (eqBadge) eqBadge.style.display = 'none';
+                    }
+                });
+            }
+
+            window.addEventListener('songLoaded', function (e) {
+                var currentSong = e.detail?.song;
+                if (currentSong) {
+                    updateCardVisualStates(currentSong.id, e.detail.isPlaying);
+                }
+            });
+
+            window.addEventListener('playerPlayStateChange', function (e) {
+                var currentSong = e.detail?.currentSong;
+                if (currentSong) {
+                    updateCardVisualStates(currentSong.id, e.detail.isPlaying);
+                }
             });
         });
 
-        // --- 4. HÀM THẢ TIM (AJAX) ---
+        // --- 5. HÀM THẢ TIM (AJAX) ---
         function toggleHeart(e, id, btn) {
             e.stopPropagation();
             e.preventDefault();
@@ -192,11 +243,21 @@
             .then(d => {
                 if (d.success) {
                     icon.className = d.isFavorite ? "fas fa-heart text-danger heart-anim" : "far fa-heart";
+                    if (window.showToast) {
+                        window.showToast(d.isFavorite ? "Đã thêm vào danh sách yêu thích! ❤️" : "Đã bỏ yêu thích", d.isFavorite ? "success" : "info");
+                    }
                 } else {
-                    alert("Có lỗi xảy ra, vui lòng thử lại!");
+                    if (window.showToast) {
+                        window.showToast("Có lỗi xảy ra, vui lòng thử lại!", "danger");
+                    } else {
+                        alert("Có lỗi xảy ra, vui lòng thử lại!");
+                    }
                 }
             })
-            .catch(err => console.error("Lỗi thả tim:", err));
+            .catch(err => {
+                console.error("Lỗi thả tim:", err);
+                if (window.showToast) window.showToast("Không thể kết nối đến máy chủ!", "danger");
+            });
         }
     </script>
 

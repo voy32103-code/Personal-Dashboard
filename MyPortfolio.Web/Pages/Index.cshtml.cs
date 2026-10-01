@@ -150,8 +150,6 @@ namespace MyPortfolio.Web.Pages
                 .Select(p => p.PlayCount)
                 .FirstOrDefaultAsync();
 
-            await InvalidateProjectsCache();
-
             return new JsonResult(new { success = true, newCount = newCount });
         }
     }

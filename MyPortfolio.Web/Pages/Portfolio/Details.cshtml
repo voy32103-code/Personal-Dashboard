@@ -5,96 +5,194 @@
 }
 
 <div class="container-fluid p-0">
+    <!-- Header Hero Banner -->
     <div class="p-5 d-flex align-items-end gap-5 glass-panel m-4 mt-0 border-0"
          style="background: linear-gradient(to bottom, rgba(0,0,0,0.2), #121212);">
 
         <div class="neumorph-btn p-1" style="border-radius: 8px; cursor: default;">
-            <img src="@Model.PortfolioItem.ImageUrl" class="rounded shadow" style="width: 250px; height: 250px; object-fit: cover;">
+            <img src="@Model.PortfolioItem.ImageUrl" class="rounded shadow" style="width: 250px; height: 250px; object-fit: cover;" alt="@Model.PortfolioItem.Title">
         </div>
 
         <div>
-            <span class="clay-badge bg-dark mb-2 d-inline-block">Project Detail</span>
+            <span class="clay-badge bg-dark mb-2 d-inline-block">Track & Project Detail</span>
             <h1 class="glitch-text display-1 fw-bold mb-3" data-text="@Model.PortfolioItem.Title">@Model.PortfolioItem.Title</h1>
 
-            <div class="d-flex align-items-center gap-2 text-white-50 fs-5">
-                <i class="fas fa-code text-success"></i>
+            <div class="d-flex align-items-center gap-2 text-white-50 fs-5 flex-wrap">
+                <i class="fas fa-music text-success"></i>
                 <span class="fw-bold text-white">@Model.PortfolioItem.Artist</span>
                 <span>•</span>
                 <span>@Model.PortfolioItem.CreatedDate.ToString("yyyy")</span>
+                <span>•</span>
+                <span><i class="fas fa-headphones me-1"></i>@Model.PortfolioItem.PlayCount lượt nghe</span>
             </div>
 
-            <div class="mt-4 d-flex gap-3">
-                <button class="neumorph-btn rounded-circle text-success" style="width: 60px; height: 60px; font-size: 1.5rem;" onclick="playCurrentSong()">
-                    <i class="fas fa-play"></i>
+            <div class="mt-4 d-flex gap-3 flex-wrap align-items-center">
+                <button class="neumorph-btn rounded-circle text-success" style="width: 60px; height: 60px; font-size: 1.5rem;" onclick="playCurrentSong()" title="Phát bài hát">
+                    <i class="fas fa-play" id="details-play-icon"></i>
                 </button>
+
+                @if (!string.IsNullOrEmpty(Model.PortfolioItem.VideoUrl))
+                {
+                    <button class="neumorph-btn px-4 rounded-pill text-danger" id="btn-toggle-video" onclick="toggleVideoView()" title="Xem Music Video">
+                        <i class="fab fa-youtube me-2"></i> <span id="video-btn-text">Xem Music Video</span>
+                    </button>
+                }
+
+                <button class="neumorph-btn px-3 rounded-pill text-info" id="btn-fetch-live-lyrics" onclick="fetchLiveLyrics()" title="Tìm kiếm lời bài hát tự động từ LRCLIB">
+                    <i class="fas fa-bolt me-1"></i> Tìm Lyrics tự động
+                </button>
+
                 <a asp-page="/Portfolio/Edit"
                    asp-route-id="@Model.PortfolioItem.Id"
                    class="neumorph-btn px-4 rounded-pill text-decoration-none">
-                    Edit Project
+                    <i class="fas fa-pen me-2"></i> Chỉnh sửa
                 </a>
             </div>
         </div>
     </div>
 
+    <!-- Video Player Container (YouTube / Direct Video) -->
+    <div class="px-5 mb-4" id="video-section" style="display: none;">
+        <div class="glass-panel p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="text-white fw-bold mb-0">
+                    <i class="fab fa-youtube text-danger me-2"></i>Music Video Preview
+                </h4>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill text-white" onclick="toggleVideoView()">
+                    <i class="fas fa-times me-1"></i> Thu gọn Video
+                </button>
+            </div>
+            <div class="ratio ratio-16x9 rounded overflow-hidden shadow-lg border border-secondary border-opacity-25" id="video-player-target">
+                <!-- Video player dynamic inject -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Lyrics & Content Section -->
     <div class="row px-5 pb-5">
         <div class="col-lg-8">
-            <h3 class="text-white fw-bold mb-4">Lyrics / Content</h3>
-            <div class="glass-panel p-4" style="min-height: 400px;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="text-white fw-bold mb-0">
+                    <i class="fas fa-microphone-alt text-success me-2"></i>Interactive Lyrics
+                </h3>
+                <span class="small text-muted">Nhấn vào từng câu để tua nhạc theo ý muốn</span>
+            </div>
+
+            <div class="glass-panel p-4" style="min-height: 400px; max-height: 600px; overflow-y: auto;">
                 <div id="lyrics-display" class="d-flex flex-column gap-3">
-                    <div class="text-muted">Loading content...</div>
+                    <div class="text-muted">Đang tải lời bài hát...</div>
                 </div>
             </div>
             <textarea id="raw-lyrics" style="display:none;">@Model.PortfolioItem.Lyrics</textarea>
         </div>
 
         <div class="col-lg-4">
-            <h3 class="text-white fw-bold mb-4">Tech Specs</h3>
+            <h3 class="text-white fw-bold mb-4">
+                <i class="fas fa-info-circle text-info me-2"></i>Thông tin & Công nghệ
+            </h3>
             <div class="glass-panel p-4">
-                <p class="text-white-50">@Model.PortfolioItem.Description</p>
+                <p class="text-white-50" style="line-height: 1.6;">@Model.PortfolioItem.Description</p>
 
                 <div class="mt-4">
-                    <span class="clay-badge bg-primary me-2 mb-2 d-inline-block">.NET 8</span>
+                    <span class="clay-badge bg-primary me-2 mb-2 d-inline-block">.NET 9</span>
                     <span class="clay-badge bg-info me-2 mb-2 d-inline-block">PostgreSQL</span>
-                    <span class="clay-badge bg-warning text-dark me-2 mb-2 d-inline-block">Render</span>
+                    <span class="clay-badge bg-success me-2 mb-2 d-inline-block">SignalR Sync</span>
+                    <span class="clay-badge bg-warning text-dark me-2 mb-2 d-inline-block">LRCLIB API</span>
                 </div>
+
+                @if (!string.IsNullOrEmpty(Model.PortfolioItem.ProjectUrl))
+                {
+                    <div class="mt-4 pt-3 border-top border-secondary border-opacity-25">
+                        <a href="@Model.PortfolioItem.ProjectUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm w-100 rounded-pill">
+                            <i class="fab fa-github me-2"></i> Xem Dự Án / Mã Nguồn
+                        </a>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
+
 @section Scripts {
     <script>
-        // --- 1. TỰ ĐỘNG PHÁT BÀI NÀY KHI VÀO TRANG ---
-        $(document).ready(function() {
-            var audioUrl = '@Model.PortfolioItem.AudioUrl';
-            if (audioUrl && audioUrl.length > 0) {
-                // Gọi hàm playMusic đã có sẵn ở _Layout
-                playMusic(
-                    '@Model.PortfolioItem.AudioUrl',
-                    '@Model.PortfolioItem.Title',
-                    '@Model.PortfolioItem.ImageUrl',
-                    '', // Description (không cần thiết ở đây)
-                    '@Model.PortfolioItem.Artist'
-                );
+        const songData = {
+            id: @Model.PortfolioItem.Id,
+            audioUrl: '@(Model.PortfolioItem.AudioUrl ?? "")',
+            videoUrl: '@(Model.PortfolioItem.VideoUrl ?? "")',
+            title: '@Html.Raw(Model.PortfolioItem.Title.Replace("'", "\\'"))',
+            imageUrl: '@(Model.PortfolioItem.ImageUrl ?? "")',
+            artist: '@Html.Raw((Model.PortfolioItem.Artist ?? "Unknown").Replace("'", "\\'"))'
+        };
+
+        let rawLyrics = document.getElementById('raw-lyrics').value;
+        const lyricsContainer = document.getElementById('lyrics-display');
+        let lyricsData = [];
+        let isVideoOpen = false;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Tự động phát khi người dùng truy cập trang Details
+            if (songData.audioUrl && songData.audioUrl.length > 0) {
+                if (typeof playMusic === 'function') {
+                    playMusic(songData.audioUrl, songData.title, songData.imageUrl, '', songData.artist);
+                }
             }
+
+            // Render lyrics
+            renderLyricsUI();
         });
 
-        // Nút Play to ở trang Details
         function playCurrentSong() {
-            playMusic(
-                '@Model.PortfolioItem.AudioUrl',
-                '@Model.PortfolioItem.Title',
-                '@Model.PortfolioItem.ImageUrl',
-                '',
-                '@Model.PortfolioItem.Artist'
-            );
+            if (typeof playMusic === 'function' && songData.audioUrl) {
+                playMusic(songData.audioUrl, songData.title, songData.imageUrl, '', songData.artist);
+            }
+        }
+
+        // --- 1. XỬ LÝ VIDEO CHẾ ĐỘ YOUTUBE / MP4 ---
+        function getYouTubeEmbedUrl(url) {
+            if (!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11)
+                ? `https://www.youtube.com/embed/${match[2]}?autoplay=1&enablejsapi=1`
+                : null;
+        }
+
+        function toggleVideoView() {
+            const videoSection = document.getElementById('video-section');
+            const target = document.getElementById('video-player-target');
+            const btnText = document.getElementById('video-btn-text');
+
+            if (!videoSection || !songData.videoUrl) return;
+
+            isVideoOpen = !isVideoOpen;
+            if (isVideoOpen) {
+                const ytEmbed = getYouTubeEmbedUrl(songData.videoUrl);
+                if (ytEmbed) {
+                    target.innerHTML = `<iframe src="${ytEmbed}" title="${songData.title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-100 h-100"></iframe>`;
+                } else {
+                    target.innerHTML = `<video src="${songData.videoUrl}" controls autoplay class="w-100 h-100"></video>`;
+                }
+                videoSection.style.display = 'block';
+                videoSection.scrollIntoView({ behavior: 'smooth' });
+                if (btnText) btnText.innerText = 'Ẩn Music Video';
+
+                // Tạm dừng audio HTML5 nếu người dùng mở video YouTube để không bị chồng tiếng
+                var audio = document.getElementById('audio-player');
+                if (audio && !audio.paused) {
+                    audio.pause();
+                    var playIcon = document.getElementById('play-icon');
+                    if (playIcon) playIcon.classList.replace("fa-pause", "fa-play");
+                }
+            } else {
+                target.innerHTML = '';
+                videoSection.style.display = 'none';
+                if (btnText) btnText.innerText = 'Xem Music Video';
+            }
         }
 
         // --- 2. XỬ LÝ LYRICS ---
-        const rawLyrics = document.getElementById('raw-lyrics').value;
-        const lyricsContainer = document.getElementById('lyrics-display');
-        let lyricsData = [];
-
         function parseLyrics(lrc) {
+            if (!lrc) return [];
             const lines = lrc.split('\n');
             const result = [];
             lines.forEach(line => {
@@ -114,21 +212,59 @@
             return result;
         }
 
-        // Render Lyrics
-        if (rawLyrics && rawLyrics.trim().length > 0) {
-            lyricsData = parseLyrics(rawLyrics);
-            if (lyricsData.length > 0) {
-                lyricsContainer.innerHTML = lyricsData.map((line, index) =>
-                    `<div class="lyrics-line" id="line-${index}" onclick="seekTo(${line.time})">${line.text}</div>`
-                ).join('');
+        function renderLyricsUI() {
+            if (rawLyrics && rawLyrics.trim().length > 0) {
+                lyricsData = parseLyrics(rawLyrics);
+                if (lyricsData.length > 0) {
+                    lyricsContainer.innerHTML = lyricsData.map((line, index) =>
+                        `<div class="lyrics-line" id="line-${index}" onclick="seekTo(${line.time})">${line.text}</div>`
+                    ).join('');
+                } else {
+                    lyricsContainer.innerHTML = `<div class="text-white-50" style="white-space: pre-line; line-height: 1.8;">${rawLyrics}</div>`;
+                }
             } else {
-                lyricsContainer.innerHTML = `<div class="text-gray" style="white-space: pre-line;">${rawLyrics}</div>`;
+                lyricsContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-compact-disc fa-3x text-muted mb-3"></i>
+                        <p class="text-muted mb-3">Chưa có lời bài hát cho bài này.</p>
+                        <button class="btn btn-outline-success btn-sm rounded-pill" onclick="fetchLiveLyrics()">
+                            <i class="fas fa-bolt me-1"></i> Tự động tìm trên LRCLIB ngay
+                        </button>
+                    </div>`;
             }
-        } else {
-            lyricsContainer.innerHTML = '<div class="text-muted fst-italic">Chưa có lời bài hát.</div>';
         }
 
-        // --- 3. SYNC LYRICS (Nghe sự kiện từ _Layout) ---
+        // Tự động tìm lời bài hát từ LRCLIB và lưu vào database
+        async function fetchLiveLyrics() {
+            const btn = document.getElementById('btn-fetch-live-lyrics');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang tải...';
+            }
+
+            try {
+                const res = await fetch(`/api/lyrics/auto-fill/${songData.id}`);
+                const data = await res.json();
+
+                if (data.success && data.lyrics) {
+                    rawLyrics = data.lyrics;
+                    renderLyricsUI();
+                    if (window.showToast) window.showToast('✅ Đã tải và đồng bộ lời bài hát thành công!', 'success');
+                } else {
+                    if (window.showToast) window.showToast('Không tìm thấy lời bài hát trên LRCLIB.', 'warning');
+                }
+            } catch (err) {
+                console.error(err);
+                if (window.showToast) window.showToast('Không thể kết nối đến dịch vụ lyrics.', 'danger');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-bolt me-1"></i> Tìm Lyrics tự động';
+                }
+            }
+        }
+
+        // --- 3. ĐỒNG BỘ LỜI BÀI HÁT THEO THỜI GIAN THỰC ---
         window.addEventListener('audioTimeUpdate', function(e) {
             const currentTime = e.detail.currentTime;
             let activeIndex = -1;
@@ -150,13 +286,12 @@
 
         // --- 4. TUA KHI BẤM VÀO LỜI ---
         function seekTo(time) {
-            var audio = document.getElementById('audio-player'); // Lấy audio từ Layout
-            if(audio) {
+            var audio = document.getElementById('audio-player');
+            if (audio) {
                 audio.currentTime = time;
                 audio.play();
-                // Cập nhật icon play ở Layout
                 var layoutPlayIcon = document.getElementById('play-icon');
-                if(layoutPlayIcon) {
+                if (layoutPlayIcon) {
                     layoutPlayIcon.classList.remove('fa-play');
                     layoutPlayIcon.classList.add('fa-pause');
                 }

@@ -14,6 +14,8 @@ using FluentValidation.AspNetCore;
 using QuestPDF.Infrastructure;
 using MyPortfolio.Web.Infrastructure;
 using CloudinaryDotNet;
+using MyPortfolio.Core.Interfaces;
+using MyPortfolio.Infrastructure.Services;
 
 // M-5: Set QuestPDF license 1 lần lúc startup — KHÔNG set trong Page Model constructor
 QuestPDF.Settings.License = LicenseType.Community;
@@ -70,39 +72,47 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // 1.6. Đăng ký Application Services
 // Đăng ký Cloudinary
-var cloudinaryUrl = builder.Configuration["CLOUDINARY_URL"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL");
-if (!string.IsNullOrEmpty(cloudinaryUrl))
+try
 {
-    builder.Services.AddSingleton<ICloudinary>(new Cloudinary(cloudinaryUrl));
-}
-else
-{
-    var configSection = builder.Configuration.GetSection("Cloudinary");
-    var cloudName = configSection["CloudName"];
-    var apiKey = configSection["ApiKey"];
-    var apiSecret = configSection["ApiSecret"];
-
-    if (!string.IsNullOrEmpty(cloudName) && !string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(apiSecret))
+    var cloudinaryUrl = builder.Configuration["CLOUDINARY_URL"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL");
+    if (!string.IsNullOrEmpty(cloudinaryUrl) && cloudinaryUrl.StartsWith("cloudinary://", StringComparison.OrdinalIgnoreCase))
     {
-        var account = new Account(cloudName, apiKey, apiSecret);
-        builder.Services.AddSingleton<ICloudinary>(new Cloudinary(account));
+        builder.Services.AddSingleton<ICloudinary>(new Cloudinary(cloudinaryUrl));
     }
     else
     {
-        builder.Services.AddSingleton<ICloudinary>(new Cloudinary());
+        var configSection = builder.Configuration.GetSection("Cloudinary");
+        var cloudName = configSection["CloudName"] ?? "dev_cloud";
+        var apiKey = configSection["ApiKey"] ?? "dev_key";
+        var apiSecret = configSection["ApiSecret"] ?? "dev_secret";
+
+        var account = new Account(cloudName, apiKey, apiSecret);
+        builder.Services.AddSingleton<ICloudinary>(new Cloudinary(account));
     }
+}
+catch
+{
+    var fallbackAccount = new Account("dev_cloud", "dev_key", "dev_secret");
+    builder.Services.AddSingleton<ICloudinary>(new Cloudinary(fallbackAccount));
 }
 
 // H-3: IFileUploadService — tập trung logic upload, validate, xóa file, tránh copy-paste
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+
+// Đăng ký dịch vụ lời bài hát tự động (LRCLIB Integration)
+builder.Services.AddHttpClient<ILyricsService, LrcLibLyricsService>(client =>
+{
+    client.BaseAddress = new Uri("https://lrclib.net/api/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 
 // 1.7. Đăng ký Google Authentication
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
     {
         IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
-        options.ClientId = googleAuthNSection["ClientId"];
-        options.ClientSecret = googleAuthNSection["ClientSecret"];
+        options.ClientId = googleAuthNSection["ClientId"] ?? string.Empty;
+        options.ClientSecret = googleAuthNSection["ClientSecret"] ?? string.Empty;
 
         //  THÊM ĐOẠN NÀY ĐỂ ÉP GOOGLE LUÔN HỎI LẠI TÀI KHOẢN 
         options.Events.OnRedirectToAuthorizationEndpoint = context =>
